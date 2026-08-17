@@ -136,7 +136,7 @@ const DATA = {"items": [{"id": 1, "pri": "P1", "item": "Tent fumigation - whole 
 const TABS = [["dash","Dashboard"],["punch","Punch list"],["bids","Bid packages"],
               ["sched","Schedule"],["setup","Setup & deadlines"],["design","Design"],["ref","Reference"]];
 const STATUSES = ["Not started","Quotes out","Scheduled","In progress","Done","Deferred","N/A"];
-let S = {items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null};
+let S = {items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null,paintRows:null};
 let F = {q:"",pri:"",pkg:"",st:"",hideNA:false,hideDone:false,sort:null,dir:1};
 
 /* ---------- storage: live API -> Claude shared -> this browser -> memory ---------- */
@@ -159,7 +159,7 @@ async function api(method,body){
 }
 function adopt(v){
   if(!v) return false;
-  S=Object.assign({items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null},
+  S=Object.assign({items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null,paintRows:null},
                   typeof v==="string"?JSON.parse(v):v);
   seedDesign(); return true;
 }
@@ -443,6 +443,32 @@ function seedDesign(){
       link:"",status:(S.design&&S.design[k])||""}));
   }
   S.designRows.forEach(r=>{ if(r.link===undefined)r.link=""; if(r.status===undefined)r.status=""; });
+  seedPaint();
+}
+function seedPaint(){
+  if(!Array.isArray(S.paintRows)||!S.paintRows.length){
+    S.paintRows=DATA.paint.map(p=>({surface:p.surface,color:p.color,sheen:p.sheen}));
+  }
+}
+function setPaint(k,f,v){ S.paintRows[k][f]=v; save(); renderDesign(); }
+function addPaint(){
+  S.paintRows.push({surface:"",color:"",sheen:""}); save(); renderDesign();
+  setTimeout(()=>{const n=document.querySelectorAll('#p-design input.pcell');
+    if(n.length)n[n.length-3].focus();},60);
+}
+function delPaint(k){
+  const r=S.paintRows[k];
+  if(r.surface||r.color){ if(!confirm('Delete "'+(r.surface||r.color)+'"?'))return; }
+  S.paintRows.splice(k,1); save(); renderDesign();
+}
+function reseedPaint(){
+  if(!confirm("Restore the original paint schedule? Your edits on this table will be lost."))return;
+  S.paintRows=null; seedPaint(); save(); renderDesign();
+}
+function expPaintCSV(){
+  const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const rows=S.paintRows.map(r=>[r.surface,r.color,r.sheen].map(q).join(","));
+  dl("3125_Embassy_paint_schedule.csv",[["Surface","Color","Sheen"].map(q).join(","),...rows].join("\n"),"text/csv");
 }
 function safeURL(u){
   u=String(u||"").trim(); if(!u)return "";
@@ -539,10 +565,26 @@ function renderDesign(){
   ${rows.length?"":`<p class="hint">No items yet — hit <b>+ Add item</b>, or <b>Restore suggested list</b> to bring
    back the original 20.</p>`}
   <h2 style="margin:30px 0 8px;font-size:22px">Paint schedule</h2>
-  <table><thead><tr><th class="nosort">Surface</th><th class="nosort">Color</th>
-    <th class="nosort" style="width:170px">Sheen</th></tr></thead><tbody>
-  ${DATA.paint.map(p=>`<tr><td>${esc(p.surface)}</td><td>${esc(p.color)}</td><td>${esc(p.sheen)}</td></tr>`).join("")}
+  <div class="filters" style="margin:0 0 12px">
+    <button onclick="addPaint()">+ Add surface</button>
+    <button class="ghost" onclick="expPaintCSV()">Export paint CSV</button>
+    <button class="ghost" onclick="reseedPaint()">Restore original schedule</button>
+    <span style="font-size:12.5px;color:#6b705f">Editable — this is the page you hand the painter, so change colors
+    as you finalize samples and add any surface I missed.</span>
+  </div>
+  <table><thead><tr><th class="nosort" style="width:290px">Surface</th><th class="nosort">Color</th>
+    <th class="nosort" style="width:190px">Sheen</th><th class="nosort" style="width:34px"></th></tr></thead><tbody>
+  ${S.paintRows.map((p,k)=>`<tr>
+    <td><input class="cell pcell" value="${esc(p.surface)}" placeholder="room / surface"
+        onchange="setPaint(${k},'surface',this.value)"></td>
+    <td><input class="cell pcell" value="${esc(p.color)}" placeholder="brand, name, code"
+        onchange="setPaint(${k},'color',this.value)"></td>
+    <td><input class="cell pcell" value="${esc(p.sheen)}" placeholder="matte / satin / flat"
+        onchange="setPaint(${k},'sheen',this.value)"></td>
+    <td><button class="ghost" title="Delete row" onclick="delPaint(${k})"
+        style="padding:3px 8px;border-color:var(--line);background:#fff;color:#B4584A">×</button></td></tr>`).join("")}
   </tbody></table>
+  ${S.paintRows.length?"":`<p class="hint">Empty — hit <b>+ Add surface</b> or <b>Restore original schedule</b>.</p>`}
   <p class="hint">The one move that ties the house together: have the paint store color-match the <b>actual front
   door</b> and use that formula on every interior door. Sample on-wall in 2ft squares — these lake-facing rooms turn
   cooler in the afternoon.</p>`;
@@ -568,17 +610,24 @@ function expCSV(){
 function expJSON(){ dl("3125_Embassy_backup.json",JSON.stringify(S,null,2),"application/json"); }
 function impJSON(el){
   const f=el.files[0]; if(!f)return; const r=new FileReader();
-  r.onload=()=>{ try{ S=Object.assign({items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null},JSON.parse(r.result));
+  r.onload=()=>{ try{ S=Object.assign({items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null,paintRows:null},JSON.parse(r.result));
     seedDesign(); save(); renderAll(); renderChrome(); alert("Restored."); }catch(e){ alert("That file could not be read."); } };
   r.readAsText(f); el.value="";
 }
 function wipe(){ if(confirm("Clear every status, quote, note and design row? Export a backup first if unsure."))
-  { S={items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null}; seedDesign(); save(); renderAll(); renderChrome(); } }
+  { S={items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null,paintRows:null}; seedDesign(); save(); renderAll(); renderChrome(); } }
 
 /* ---------- boot ---------- */
 function renderAll(){ renderDash();renderPunch();renderBids();renderSched();renderSetup();renderDesign();renderRef(); }
 function go(id){ TABS.forEach(([k])=>{
     document.getElementById('p-'+k).classList.toggle('on',k===id);
+    document.querySelector('[data-t="'+k+'"]').classList.toggle('on',k===id); }); }
+document.getElementById('nav').innerHTML=TABS.map(([k,l])=>
+  `<a data-t="${k}" class="${k==='dash'?'on':''}" onclick="go('${k}')">${l}</a>`).join("");
+load().then(()=>{ seedDesign(); renderAll(); renderRef(); renderChrome(); });
+</script>
+</body>
+</html>
     document.querySelector('[data-t="'+k+'"]').classList.toggle('on',k===id); }); }
 document.getElementById('nav').innerHTML=TABS.map(([k,l])=>
   `<a data-t="${k}" class="${k==='dash'?'on':''}" onclick="go('${k}')">${l}</a>`).join("");

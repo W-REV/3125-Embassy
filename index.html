@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3125 Embassy Drive — Project Command</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Karla:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{--shell:#FBF8F2;--plaster:#F3EEE4;--line:#CFC6B4;--ink:#2F332C;--deep:#1F3A2E;
+        --palm:#5E7256;--sage:#B7C2AF;--tan:#CBB99F;--red:#B4584A;--green:#C6E0B4;
+        --greenink:#375623;--grey:#E4E4E0;--greyink:#8C8C8C;
+        --p1:#F4CCCC;--p2:#FCE5CD;--p3:#FFF2CC;--p4:#E2EFDA}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--shell);color:var(--ink);font-family:'Karla',sans-serif;font-size:15px;line-height:1.55}
+  h1,h2,h3{font-family:'Marcellus',serif;font-weight:400}
+  .wrap{max-width:1500px;margin:0 auto;padding:0 22px}
+  header{background:var(--deep);color:#fff;padding:20px 0 0}
+  .htop{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
+  header h1{font-size:26px}
+  header .sub{font-size:12.5px;color:#B9C7B4;letter-spacing:.06em}
+  .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  button{font-family:'Karla',sans-serif;font-size:13px;padding:7px 13px;border:1px solid #4B6B58;
+         background:#2A4A3A;color:#fff;cursor:pointer;border-radius:2px}
+  button:hover{background:#38604B}
+  button.ghost{background:transparent}
+  button.warn{border-color:#8A5248;background:#6E4038}
+  #save{font-size:11.5px;color:#B9C7B4;letter-spacing:.05em;min-width:120px}
+  nav{display:flex;gap:2px;margin-top:18px;flex-wrap:wrap}
+  nav a{font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:#C9D8C4;text-decoration:none;
+        padding:11px 15px;border-bottom:3px solid transparent;cursor:pointer}
+  nav a.on{color:#fff;border-bottom-color:var(--sage);background:rgba(255,255,255,.06)}
+  main{padding:26px 0 90px}
+  .panel{display:none} .panel.on{display:block}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:8px}
+  .kpi{background:#fff;border:1px solid var(--line);padding:14px 16px}
+  .kpi .lab{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#6b705f}
+  .kpi .val{font-family:'Marcellus',serif;font-size:27px;margin-top:4px}
+  .kpi .note{font-size:11.5px;color:#8a8271}
+  .bar{height:9px;background:var(--grey);margin-top:10px;border:1px solid var(--line)}
+  .bar i{display:block;height:100%;background:var(--palm)}
+  .filters{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:20px 0 12px;
+           background:#fff;border:1px solid var(--line);padding:12px 14px}
+  .filters input[type=text],.filters select{font-family:'Karla',sans-serif;font-size:13.5px;padding:6px 9px;
+           border:1px solid var(--line);background:var(--shell);color:var(--ink)}
+  .filters input[type=text]{min-width:230px}
+  .filters label{font-size:12.5px;color:#6b705f;display:flex;align-items:center;gap:5px}
+  .chip{font-size:12px;padding:5px 11px;border:1px solid var(--line);background:#fff;cursor:pointer;border-radius:2px}
+  .chip.on{background:var(--deep);color:#fff;border-color:var(--deep)}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);font-size:13.5px}
+  th{text-align:left;font-family:'Marcellus',serif;font-weight:400;font-size:11.5px;letter-spacing:.1em;
+     text-transform:uppercase;padding:10px;background:var(--plaster);border-bottom:1px solid var(--ink);
+     position:sticky;top:0;z-index:2;cursor:pointer;white-space:nowrap}
+  th.nosort{cursor:default}
+  td{padding:8px 10px;border-bottom:1px solid #ECE5D6;vertical-align:top}
+  tr.done td{background:var(--green)!important;color:var(--greenink)}
+  tr.na td{background:var(--grey)!important;color:var(--greyink);font-style:italic}
+  td.pri{font-weight:600;text-align:center;white-space:nowrap}
+  .price,.num{text-align:right;white-space:nowrap}
+  .ref{font-size:11.5px;color:#6b705f}
+  .why{font-size:12px;color:#6b705f}
+  select.st,input.cell{font-family:'Karla',sans-serif;font-size:12.5px;padding:4px 6px;
+        border:1px solid var(--line);background:var(--shell);color:var(--ink);width:100%}
+  input.cell::placeholder{color:#B3AC9C}
+  td.hidewhy .why{display:none}
+  .pkg{background:#fff;border:1px solid var(--line);margin-bottom:16px}
+  .pkghd{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;
+         padding:14px 16px;background:var(--plaster);border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .pkghd h3{font-size:18px}
+  .pkghd .meta{font-size:12.5px;color:#6b705f;margin-top:3px}
+  .pkgbody{padding:14px 16px}
+  .pkgbody .who{font-size:13px;margin-bottom:8px}
+  .pkgbody .rfq{font-size:13px;color:#4d5347;background:var(--shell);border-left:3px solid var(--sage);
+                padding:10px 13px;margin-bottom:12px}
+  .pkg.complete .pkghd{background:var(--green)}
+  .sched td:nth-child(4){font-size:12.5px}
+  .ck{width:17px;height:17px;accent-color:#5E7256;cursor:pointer}
+  .refdoc{background:#fff;border:1px solid var(--line);padding:22px 24px;margin-bottom:18px;max-width:980px}
+  .refdoc h3{font-size:21px;margin-bottom:10px}
+  .refdoc p,.refdoc li{font-size:14px;margin-bottom:10px}
+  .refdoc ol{padding-left:20px}
+  .refdoc table{margin:12px 0;font-size:13px}
+  .hint{font-size:12.5px;color:#6b705f;margin:10px 0 0;max-width:1000px}
+  .banner{background:#fff;border-left:3px solid var(--red);padding:12px 16px;margin-bottom:18px;font-size:13.5px}
+  @media print{header,nav,.filters,.tools,#save{display:none}.panel{display:block!important}
+    body{background:#fff}tr.done td{background:#eaf3e3!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="htop">
+      <div>
+        <h1>3125 Embassy Drive — Project Command</h1>
+        <div class="sub">PRESIDENTIAL ESTATES · WEST PALM BEACH · CLOSED 08/12/2026</div>
+      </div>
+      <div class="tools">
+        <span id="save">—</span>
+        <input id="who" placeholder="your name" onchange="setWho(this.value)"
+          style="font-family:'Karla',sans-serif;font-size:12.5px;padding:6px 8px;width:104px;
+                 border:1px solid #4B6B58;background:#22402F;color:#fff">
+        <button onclick="refresh()">Pull latest</button>
+        <button onclick="expCSV()">Export CSV for Excel</button>
+        <button class="ghost" onclick="expJSON()">Backup JSON</button>
+        <button class="ghost" onclick="document.getElementById('imp').click()">Restore JSON</button>
+        <input type="file" id="imp" accept=".json" style="display:none" onchange="impJSON(this)">
+        <button class="ghost" onclick="window.print()">Print</button>
+        <button class="warn" onclick="wipe()">Reset</button>
+      </div>
+    </div>
+    <nav id="nav"></nav>
+  </div>
+</header>
+<main class="wrap">
+  <div id="sharenote" style="display:none;background:#fff;border-left:3px solid var(--palm);
+       padding:11px 15px;margin-bottom:16px;font-size:13px">
+    <b>Shared workspace.</b> Statuses, quotes, notes and design rows are saved once and visible to everyone who opens
+    this dashboard — treat anything you type here as shared with the group, vendor pricing included. It checks for
+    other people's changes every 20 seconds; <b>Pull latest</b> forces it. Put your name in the box above and every
+    save is stamped with it.</div>
+  <div id="localnote" style="display:none;background:#fff;border-left:3px solid var(--tan);
+       padding:11px 15px;margin-bottom:16px;font-size:13px">
+    <b>Local copy.</b> This file is running outside the shared workspace, so your entries are saved in this browser
+    only — other people opening their own copy won't see them. Use <b>Backup JSON</b> to hand off your work, or keep
+    the Excel workbook in a shared drive as the group's source of truth.</div>
+  <div class="panel on" id="p-dash"></div>
+  <div class="panel" id="p-punch"></div>
+  <div class="panel" id="p-bids"></div>
+  <div class="panel" id="p-sched"></div>
+  <div class="panel" id="p-setup"></div>
+  <div class="panel" id="p-design"></div>
+  <div class="panel" id="p-ref"></div>
+</main>
+<script>
+const DATA = {"items": [{"id": 1, "pri": "P1", "item": "Tent fumigation - whole structure (drywood termites)", "ref": "WDO Rpt Sec 2.B.2 + Sec 5 Comments (\"Recommended tenting\"); Home Insp 4.1.1", "trade": "Pest control", "pkg": "01 Fumigation & pest", "why": "WDO report: drywood termite pellets + trusses in attic over garage; inspector's written recommendation is tenting. House is EMPTY - best window you will ever have. Gates all interior work.", "lo": 3500, "hi": 6500}, {"id": 2, "pri": "P1", "item": "Structural evaluation + repair of termite-damaged trusses", "ref": "Home Insp 4.1.1 (\"truss damage from termites... evaluate by GC and/or structural engineer\")", "trade": "Engineer / GC", "pkg": "02 Structural engineer", "why": "Do after fumigation. Keep the engineer's letter and repair invoices for insurance and resale.", "lo": 2000, "hi": 6000}, {"id": 3, "pri": "P1", "item": "Roof tile repairs - full roof eval, all damaged tiles, plywood at prior leaks", "ref": "Home Insp 3.2.1; 4-Point Roof section = UNSATISFACTORY (roof 3 yrs, permit 11/28/23)", "trade": "Roofer", "pkg": "03 Roofing", "why": "Carrier will likely require documented repairs to bind/renew. Require photo proof of repairs; replace deteriorated plywood in any leak area.", "lo": 1500, "hi": 4500}, {"id": 4, "pri": "P1", "item": "Replace rusted-through electrical service riser / meter pipe", "ref": "Home Insp 7.2.1 (Safety Concern)", "trade": "Electrician (FPL-approved)", "pkg": "04 Electrical", "why": "Rusted through at ground level, service-entrance conductors exposed. Significant safety hazard. Needs FPL coordination. Trapco offered an FPL-approved referral.", "lo": 2000, "hi": 4000}, {"id": 5, "pri": "P1", "item": "GFCI repairs - kitchen counters, exterior rear/right, all wet areas", "ref": "Home Insp 7.6.1 (Safety Concern)", "trade": "Electrician", "pkg": "04 Electrical", "why": "GFCIs not tripping/resetting; broken reset exterior rear; open ground exterior right; no GFCI protection at kitchen.", "lo": 600, "hi": 1500}, {"id": 6, "pri": "P1", "item": "Smoke + CO detectors - hardwired w/ battery backup, all bedrooms & living areas", "ref": "Home Insp 7.7.1 (Safety Concern)", "trade": "Electrician", "pkg": "04 Electrical", "why": "Existing smoke detectors 10+ yrs old; NO CO detectors present. Do before first night in the house.", "lo": 600, "hi": 1500}, {"id": 7, "pri": "P1", "item": "Replace garage-to-house door with 20-min fire-rated / solid core + self-closer", "ref": "Home Insp 5.7.1 (Safety Concern)", "trade": "Door contractor", "pkg": "05 Doors & windows", "why": "Current interior-style door does not meet separation requirements (needs 1-3/8in solid wood, solid/honeycomb steel, or 20-min rated).", "lo": 800, "hi": 1500}, {"id": 8, "pri": "P1", "item": "Clear vegetation blocking pool fence self-close/latch", "ref": "Home Insp 2.2.1 (\"Overgrown vegetation impedes fence from self closing\")", "trade": "Landscaper", "pkg": "10 Landscape & irrigation", "why": "Pool barrier must self-close and latch. Child safety - immediate.", "lo": 0, "hi": 300}, {"id": 9, "pri": "P1", "item": "Repair broken lock on living room left slider", "ref": "Home Insp 2.5.1 (\"Broken locking mechanism. Did not lock\")", "trade": "Locksmith / handyman", "pkg": "05 Doors & windows", "why": "Security item on an empty house.", "lo": 150, "hi": 600}, {"id": 10, "pri": "P2", "item": "Hall bath toilet wax ring + repair moisture-damaged flooring", "ref": "Home Insp 8.4.1 + 11.3.1 (elevated moisture confirmed)", "trade": "Plumber", "pkg": "06 Plumbing", "why": "Moisture tested positive in wood floor at the toilet. Cheap now, expensive later.", "lo": 500, "hi": 1500}, {"id": 11, "pri": "P2", "item": "Rear French doors (garage side) - leak, rust, failed weatherstripping", "ref": "Home Insp 2.5.2", "trade": "Door contractor", "pkg": "05 Doors & windows", "why": "Active leak evidence + damaged adjacent flooring. Consider impact-rated replacement for wind-mit credit.", "lo": 600, "hi": 6000}, {"id": 12, "pri": "P2", "item": "Left attic air handler - microbial growth / deteriorated plenum", "ref": "Home Insp 10.3.1", "trade": "HVAC", "pkg": "07 HVAC", "why": "Must be resolved BEFORE insulation and ceiling paint or you recontaminate finished work. Get repair-vs-replace opinion.", "lo": 4500, "hi": 8000}, {"id": 13, "pri": "P2", "item": "Seal supply/return plenum & duct connections (both systems)", "ref": "Home Insp 10.3.2", "trade": "HVAC", "pkg": "07 HVAC", "why": "Conditioned air leaking into attic - efficiency loss plus condensation risk in FL humidity. Mechanical fastening + mastic.", "lo": 800, "hi": 2000}, {"id": 14, "pri": "P2", "item": "Re-route bath exhaust to exterior + add fans where missing", "ref": "Home Insp 6.4.1 + 6.4.2 (front-left bath has no ventilator)", "trade": "HVAC / electrician", "pkg": "07 HVAC", "why": "Bath fan currently vents INTO the attic - moisture/mold source.", "lo": 1500, "hi": 3600}, {"id": 15, "pri": "P2", "item": "HVAC service system #1, replace panel insulation, replace all filters", "ref": "Home Insp 9.3.1; 4-Point HVAC (ages 12 & 3 yrs, last serviced Sept 2023)", "trade": "HVAC", "pkg": "07 HVAC", "why": "Both air handler filters dirty at inspection. Start a semi-annual contract.", "lo": 250, "hi": 900}, {"id": 16, "pri": "P3", "item": "Soffit wood rot repair - valleys, rear, front entry, left side", "ref": "Home Insp 3.3.1; WDO Sec 2.B.3 (wood-decaying fungi: drip edge over garage, soffit left of front entry, soffit rear above sliders)", "trade": "Carpenter", "pkg": "08 Carpentry & stucco", "why": "Coordinate with the roofer so valley flashing and drip edge are addressed once.", "lo": 1500, "hi": 4000}, {"id": 17, "pri": "P3", "item": "Fascia rot repair at board joints + prime/paint", "ref": "Home Insp 3.3.2", "trade": "Roofer / carpenter", "pkg": "08 Carpentry & stucco", "why": "Wood rot at fascia joints; peeling paint left side.", "lo": 1000, "hi": 3000}, {"id": 18, "pri": "P3", "item": "Seal gaps between soffit screening and soffits", "ref": "Home Insp 3.3.3", "trade": "Handyman", "pkg": "08 Carpentry & stucco", "why": "Pest entry points into the attic.", "lo": 150, "hi": 600}, {"id": 19, "pri": "P3", "item": "Stucco repair at removed HVAC/plumbing penetrations", "ref": "Home Insp 2.3.1", "trade": "Stucco contractor", "pkg": "08 Carpentry & stucco", "why": "Open penetrations left when HVAC was replaced/relocated.", "lo": 400, "hi": 1200}, {"id": 20, "pri": "P3", "item": "Correct stucco-to-ground contact / re-grade soil clearance", "ref": "Home Insp 2.3.2", "trade": "Landscaper", "pkg": "10 Landscape & irrigation", "why": "Promotes moisture intrusion and conceals termite activity.", "lo": 300, "hi": 1200}, {"id": 21, "pri": "P3", "item": "Trim vegetation off walls, windows, condenser, meter, sprinkler timer", "ref": "Home Insp 2.2.1", "trade": "Landscaper", "pkg": "10 Landscape & irrigation", "why": "Traps moisture, deteriorates materials, blocks safe service access.", "lo": 300, "hi": 900}, {"id": 22, "pri": "P3", "item": "Replace 2 broken hose bibs; remove abandoned leaking water filter", "ref": "Home Insp 8.6.1", "trade": "Plumber", "pkg": "06 Plumbing", "why": "Exterior plumbing deficiencies.", "lo": 400, "hi": 1000}, {"id": 23, "pri": "P3", "item": "Repair leaking exterior/rear shower valve", "ref": "Home Insp 8.6.1 (\"Leaky rear shower valve\")", "trade": "Plumber", "pkg": "06 Plumbing", "why": "Active leak.", "lo": 300, "hi": 900}, {"id": 24, "pri": "P3", "item": "Cap or remove abandoned pool-heater gas piping (no tank present)", "ref": "Home Insp 14.2.3", "trade": "Plumber", "pkg": "06 Plumbing", "why": "Abandoned / out-of-service gas line.", "lo": 200, "hi": 600}, {"id": 25, "pri": "P3", "item": "Identify mystery vent pipe (left side) + install proper cover", "ref": "Home Insp 6.3.1", "trade": "Handyman / GC", "pkg": "12 Handyman & appliances", "why": "Function could not be determined at inspection.", "lo": 100, "hi": 400}, {"id": 26, "pri": "P4", "item": "Window balances - garage left, front-left bdrm x3 incl bath; kitchen guides", "ref": "Home Insp 2.6.1 (referral: Tal, Slide & Glide 561-930-0425)", "trade": "Window contractor", "pkg": "05 Doors & windows", "why": "Broken balances; windows may fall or not stay in position.", "lo": 500, "hi": 1400}, {"id": 27, "pri": "P4", "item": "Re-screen worn/torn window screens (screens stored in garage)", "ref": "Home Insp 2.6.1 + 2.6.2", "trade": "Window contractor", "pkg": "05 Doors & windows", "why": "Most screens worn, some torn.", "lo": 200, "hi": 600}, {"id": 28, "pri": "P4", "item": "Dead circuits - LR left slider, dining room, exterior back, vacuum receptacle", "ref": "Home Insp 7.5.1 + 7.6.1", "trade": "Electrician", "pkg": "04 Electrical", "why": "No power at multiple locations; needs diagnosis.", "lo": 400, "hi": 1200}, {"id": 29, "pri": "P4", "item": "Repair exposed wires in kitchen, left of oven", "ref": "Home Insp 7.5.1 (\"Exposed wires. Kitchen left of oven\")", "trade": "Electrician", "pkg": "04 Electrical", "why": "Safety - bundle with the electrician visit.", "lo": 100, "hi": 400}, {"id": 30, "pri": "P4", "item": "Missing receptacle covers, junction box cover, dimmer knobs", "ref": "Home Insp 7.5.1", "trade": "Handyman / electrician", "pkg": "04 Electrical", "why": "Garage left wall, master bdrm x2, front-middle bdrm, master dimmers x2.", "lo": 150, "hi": 500}, {"id": 31, "pri": "P4", "item": "Identify & label mystery switches; replace burnt bulbs then retest", "ref": "Home Insp 7.5.1 (patio light sporadic; mystery switches at LR pass-through & back slider)", "trade": "Electrician", "pkg": "04 Electrical", "why": "Several switches with no apparent function.", "lo": 200, "hi": 700}, {"id": 32, "pri": "P4", "item": "Interior doors - latch master bdrm/bath, exterior door strike, rehang closet door", "ref": "Home Insp 11.2.1 + 2.5.1", "trade": "Handyman", "pkg": "12 Handyman & appliances", "why": "Various latching/alignment issues; front-left bedroom closet door was removed.", "lo": 250, "hi": 800}, {"id": 33, "pri": "P4", "item": "Water heater - add thermal expansion tank / correct hard wiring", "ref": "Home Insp 8.5.1; 4-Point Plumbing (WH 2018, 8 yrs)", "trade": "Plumber", "pkg": "06 Plumbing", "why": "FL typically requires expansion tank on closed systems. Budget WH replacement ~2028-30.", "lo": 400, "hi": 1000}, {"id": 34, "pri": "P4", "item": "Replace corrugated flexible drain tailpiece under bath sink", "ref": "Home Insp 8.4.2", "trade": "Plumber", "pkg": "06 Plumbing", "why": "Improvement - clog/leak prone.", "lo": 150, "hi": 400}, {"id": 35, "pri": "P4", "item": "Upgrade old shutoff valves (washer, garage sink) to quarter-turn", "ref": "Home Insp 8.3.1", "trade": "Plumber", "pkg": "06 Plumbing", "why": "Age-related wear; inspector would not turn them due to failure risk.", "lo": 300, "hi": 900}, {"id": 36, "pri": "P4", "item": "Attic insulation - redistribute displaced R-19, top up toward R-30", "ref": "Home Insp 6.2.1 + 6.2.2", "trade": "Insulation", "pkg": "09 Insulation", "why": "Do LAST in the attic sequence - after fumigation, HVAC and electrical.", "lo": 1800, "hi": 3500}, {"id": 37, "pri": "P4", "item": "Pool light inoperative - diagnose bulb/GFCI/switch/wiring", "ref": "Home Insp 14.2.1", "trade": "Pool contractor", "pkg": "11 Pool", "why": "Not operating at inspection.", "lo": 200, "hi": 900}, {"id": 38, "pri": "P4", "item": "Evaluate/replace old pool plumbing valves", "ref": "Home Insp 14.2.2", "trade": "Pool contractor", "pkg": "11 Pool", "why": "Age - stiff, worn, leak-prone.", "lo": 400, "hi": 1200}, {"id": 39, "pri": "P4", "item": "Pool surface staining treatment", "ref": "Home Insp 14.3.1", "trade": "Pool contractor", "pkg": "11 Pool", "why": "Typical staining noted.", "lo": 200, "hi": 600}, {"id": 40, "pri": "P4", "item": "Irrigation service - Zone 3 dead, adjust heads, verify timer/rain sensor", "ref": "Home Insp 13.2.1", "trade": "Irrigation", "pkg": "10 Landscape & irrigation", "why": "Zone 3 not working; overspray and water waste.", "lo": 300, "hi": 900}, {"id": 41, "pri": "P4", "item": "Replace inoperable microwave", "ref": "Home Insp 12.5.1", "trade": "Appliance", "pkg": "12 Handyman & appliances", "why": "Damaged and not functioning.", "lo": 300, "hi": 900}, {"id": 42, "pri": "P4", "item": "Repair/replace instant hot water dispenser", "ref": "Home Insp 12.11.1", "trade": "Appliance", "pkg": "12 Handyman & appliances", "why": "Not functioning at inspection.", "lo": 200, "hi": 700}, {"id": 43, "pri": "P4", "item": "Level leaning refrigerator", "ref": "Home Insp 12.6.1", "trade": "Appliance / handyman", "pkg": "12 Handyman & appliances", "why": "Leaning back.", "lo": 0, "hi": 200}, {"id": 44, "pri": "P4", "item": "Service whole-house vacuum system", "ref": "Home Insp 12.12.1", "trade": "Appliance", "pkg": "12 Handyman & appliances", "why": "Powers on when plugged in; no operational testing performed.", "lo": 150, "hi": 500}, {"id": 45, "pri": "P4", "item": "Kitchen island trash drawer - service for smooth operation", "ref": "Home Insp 11.6.1", "trade": "Handyman", "pkg": "12 Handyman & appliances", "why": "Difficult to operate.", "lo": 0, "hi": 250}, {"id": 46, "pri": "P4", "item": "Garage ceiling/wall - patch old leak staining + tape joint cracks, paint", "ref": "Home Insp 5.3.1 + 5.3.2", "trade": "Painter", "pkg": "13 Paint & wallpaper", "why": "Staining from a previously repaired roof leak; cosmetic tape joint deterioration.", "lo": 600, "hi": 1800}, {"id": 47, "pri": "P4", "item": "Ceiling touch-ups: master bath x2, master closet, front-middle bdrm, above fireplace", "ref": "Home Insp 11.5.1 (all tested dry)", "trade": "Painter", "pkg": "13 Paint & wallpaper", "why": "Cosmetic finish deficiencies.", "lo": 400, "hi": 1200}, {"id": 48, "pri": "P4", "item": "Prime and paint unfinished baseboard trim", "ref": "Home Insp 11.4.1", "trade": "Painter", "pkg": "13 Paint & wallpaper", "why": "Installed and caulked but never finish painted.", "lo": 400, "hi": 1200}, {"id": 49, "pri": "Design", "item": "Wallpaper removal + skim coat: living room, blue room, pink bath, blue bath", "ref": "Owner scope (design plan)", "trade": "Painter / drywall", "pkg": "13 Paint & wallpaper", "why": "Long pole for design work. Must finish before furniture arrives.", "lo": 3500, "hi": 8000}, {"id": 50, "pri": "Design", "item": "Interior paint: LR walls, ALL green doors to front-door sage, blue bath to tan, ceilings, trim", "ref": "Owner scope (design plan)", "trade": "Painter", "pkg": "13 Paint & wallpaper", "why": "Color-match the actual front door and use that formula on every interior door.", "lo": 6000, "hi": 12000}, {"id": 51, "pri": "Design", "item": "Demo concrete slab in mid yard + haul + irrigation check + re-sod", "ref": "Owner scope (backyard plan)", "trade": "Hardscape", "pkg": "14 Hardscape", "why": "Slab is marooned in the lawn and anchors nothing.", "lo": 1500, "hi": 4000}, {"id": 52, "pri": "Design", "item": "Travertine fire-pit terrace off pool deck north edge (spare tiles on hand)", "ref": "Owner scope (backyard plan)", "trade": "Hardscape", "pkg": "14 Hardscape", "why": "Highest-value use of the spare tiles. Keeps the reserved gym corner clear.", "lo": 2500, "hi": 6000}, {"id": 53, "pri": "Setup", "item": "Rekey all locks + collect remotes/fobs", "ref": "Owner scope (move-in)", "trade": "Locksmith", "pkg": "15 Move-in services", "why": "Day one security.", "lo": 300, "hi": 800}, {"id": 54, "pri": "Setup", "item": "Deep clean + duct cleaning (after HVAC repairs)", "ref": "Owner scope (move-in)", "trade": "Cleaning", "pkg": "15 Move-in services", "why": "Do after trades, before furniture.", "lo": 600, "hi": 1800}], "packages": [{"name": "01 Fumigation & pest", "who": "Licensed fumigation companies (get 3). Acreage Environmental did the WDO inspection (Tony Willingham, 561-248-3880) - get competing quotes since they recommended the work.", "rfq": "Whole-structure tent for drywood termites. Ask for: tarp vs. Vikane cost, days required, prep list, 1-yr renewable warranty/bond price, and whether they will re-inspect the attic trusses after treatment."}, {"name": "02 Structural engineer", "who": "FL-licensed structural engineer or GC. Boundary Surveying (561-318-0514) has your survey if drawings are needed.", "rfq": "Attic truss evaluation over the garage AFTER fumigation. Ask for: a signed/sealed letter, repair detail (sistering/plating), and a cost to supervise the repair. Keep for insurance and resale."}, {"name": "03 Roofing", "who": "Roofers licensed in Palm Beach County (get 3). Ask whoever installed the 2023 roof first - warranty may still transfer.", "rfq": "Concrete tile roof, installed 2023, permit 11/28/23. Full-roof evaluation, replace ALL cracked/slipped tiles, replace deteriorated plywood at prior leak areas. MUST provide photo documentation of every repair for the insurance carrier. Include fascia rot at board joints if they do carpentry."}, {"name": "04 Electrical", "who": "Licensed electrical contractor, FPL-approved for the riser. Trapco Inspections (561-529-2891) offered an FPL-approved referral.", "rfq": "One mobilization, six scopes. Lead item is the rusted service riser (needs FPL disconnect/reconnect). Ask them to price each line separately so you can stage the smaller items."}, {"name": "05 Doors & windows", "who": "Door/window contractors. Inspector referral for windows/sliders: Tal at Slide & Glide, 561-930-0425.", "rfq": "Two sub-scopes: (a) door work - fire-rated garage door, leaking rear French doors, slider lock, strike plates; (b) window work - balances, guides, screens. Ask for impact-rated pricing on the French doors as an alternate - it may earn a wind-mitigation credit."}, {"name": "06 Plumbing", "who": "Licensed plumbing contractor (get 2-3).", "rfq": "One visit, seven items. Lead item is the hall bath toilet wax ring (active moisture). Ask them to quote the water heater expansion tank now and note what a full WH replacement would cost in 2028-30."}, {"name": "07 HVAC", "who": "Licensed HVAC contractors (get 3 - this is your biggest single line).", "rfq": "Two systems (ages ~12 and ~3 yrs, last serviced Sept 2023). Critical: repair-vs-REPLACE opinion on the left attic air handler with microbial growth. Also plenum/duct sealing, bath exhaust re-route to exterior, added bath fans, service + filters. Ask for a semi-annual maintenance contract price."}, {"name": "08 Carpentry & stucco", "who": "Carpenter and stucco contractor - or one GC to run both.", "rfq": "Soffit and fascia rot (roof valleys, rear, front entry, left side), soffit screen gaps, stucco repair at old HVAC penetrations. SEQUENCE NOTE: coordinate with the roofer so valley flashing and drip edge are handled once. WDO report also found wood-decaying fungi at these same locations."}, {"name": "09 Insulation", "who": "Insulation contractor.", "rfq": "Redistribute displaced R-19 and price a top-up to R-30. MUST be scheduled LAST in the attic - after fumigation, HVAC and electrical are complete."}, {"name": "10 Landscape & irrigation", "who": "Landscape maintenance company + irrigation specialist (often the same firm).", "rfq": "Immediate: clear vegetation blocking the pool gate self-close (child safety), and clear walls/windows/condenser/electric meter/sprinkler timer. Then re-grade soil for stucco clearance, repair irrigation Zone 3, adjust all heads, verify timer and rain sensor. Also quote ongoing bi-weekly maintenance and hedge trimming."}, {"name": "11 Pool", "who": "Pool service company (weekly service + repair capability).", "rfq": "Diagnose inoperative pool light, evaluate/replace aged plumbing valves, treat surface staining. Also confirm the pool barrier self-closes and latches. Bundle with a weekly service contract quote."}, {"name": "12 Handyman & appliances", "who": "Handyman for a full day or two; appliance tech for the rest.", "rfq": "Batch these - none justify a trip on its own. Doors/latches, closet door rehang, receptacle covers and dimmer knobs, trash drawer, mystery vent cover, microwave replacement, instant-hot repair, fridge leveling, central vacuum service."}, {"name": "13 Paint & wallpaper", "who": "Painting contractor with wallpaper removal experience (get 3 - biggest design line).", "rfq": "House is EMPTY - price accordingly. Wallpaper removal + skim: living room, blue room, pink bath, blue bath. Paint: LR walls, ALL interior doors to a color-match of the actual front door, blue bath to tan, ceiling touch-ups, garage ceiling patch, unfinished baseboard trim. Have them color-match the front door in person."}, {"name": "14 Hardscape", "who": "Hardscape/paver contractor.", "rfq": "Demo and haul the concrete slab in the mid yard, re-sod and check irrigation heads in that zone. Then set a fire-pit terrace off the pool deck's north edge USING TRAVERTINE ALREADY ON SITE - confirm they will work with owner-supplied tile and tell you how many they need."}, {"name": "15 Move-in services", "who": "Locksmith; cleaning company (duct cleaning may be the HVAC contractor).", "rfq": "Rekey all exterior doors and collect/repro remotes and fobs. Deep clean + duct cleaning scheduled AFTER all trades finish and BEFORE furniture delivery."}], "schedule": [{"wk": "0", "dates": "Aug 13-16", "stream": "Mobilize", "tasks": "Utilities transfer; rekey; fix slider lock; get 3 quotes each on fumigation/roof/electrical/HVAC; email POA for ARB rules + lake strip contact; file roof warranty transfer."}, {"wk": "1", "dates": "Aug 17-23", "stream": "FUMIGATION (critical path)", "tasks": "Tent 2-3 days. Outdoors only same week: landscaper clears vegetation + pool gate; roofer walks entire roof and contracts repairs."}, {"wk": "2", "dates": "Aug 24-30", "stream": "Roof + electrical", "tasks": "Roof tile repairs with photo documentation, send to insurer. Electrician: service riser (FPL), GFCIs, smoke/CO, exposed wires, dead circuits. Engineer evaluates trusses."}, {"wk": "3", "dates": "Aug 31-Sep 6", "stream": "HVAC + envelope", "tasks": "Replace left air handler; seal plenums; service system #1. Carpenter: soffit/fascia rot, screen gaps; stucco repairs. Truss repairs per engineer."}, {"wk": "4", "dates": "Sep 7-13", "stream": "Plumbing + attic close-out", "tasks": "Wax ring + floor repair; hose bibs; shower valve; remove filter; cap gas line; expansion tank. Re-route bath exhausts. Insulation last. Duct cleaning."}, {"wk": "5-6", "dates": "Sep 14-27", "stream": "WALLPAPER + PAINT (long pole)", "tasks": "Strip wallpaper LR/pink bath/blue room; skim; paint walls, all doors to front-door sage, blue bath to tan, ceilings, baseboards. Replace rear French doors. Windows in parallel."}, {"wk": "6", "dates": "Sep 21-27", "stream": "Backyard hardscape", "tasks": "Demo concrete slab; extend travertine per design plan; sod repair; irrigation service incl Zone 3."}, {"wk": "7", "dates": "Sep 28-Oct 4", "stream": "Punch + appliances", "tasks": "Handyman days: doors/latches, knobs, drawer, trim. Microwave, instant-hot, fridge, vacuum. Pool light/valves/stain. Fire-rated garage door."}, {"wk": "8", "dates": "Oct 5-11", "stream": "Clean, verify, move in", "tasks": "Deep clean; re-inspect punch list; photograph everything for records; furniture deliveries begin."}, {"wk": "Parallel", "dates": "Sep-Nov", "stream": "Gym / pool house track", "tasks": "POA + city diligence (wk 1-3), designer + ARB package (wk 4-8), permit (4-10 wks), build Q1 2027. Deliberately OFF the move-in critical path."}], "deadlines": [{"item": "Insurance roof-repair proof", "when": "Confirm exact date with carrier (commonly 30-90 days from binder)", "why": "4-Point roof section marked UNSATISFACTORY - coverage depends on documented repair", "who": "Your insurance agent", "flag": "YES - CONFIRM DAY 1"}, {"item": "Roof warranty transfer (2023 tile roof)", "when": "Often 30-60 days from sale - target by ~Sep 11, 2026", "why": "Transferable warranty is lost if the notice window passes", "who": "Roofing manufacturer + original installer via seller's agent", "flag": ""}, {"item": "Send wind mitigation report to agent", "when": "This week", "why": "Premium credits", "who": "Insurance agent", "flag": ""}, {"item": "Correct construction type with carrier", "when": "This week", "why": "Home is WOOD FRAME; Property Appraiser lists CBS - affects insurance rating accuracy (Home Insp 4.4.1)", "who": "Insurance agent (then decide re: PAO)", "flag": ""}, {"item": "Homestead exemption filing", "when": "March 1, 2027 (pre-file now)", "why": "Significant annual tax savings + Save Our Homes cap", "who": "Palm Beach County Property Appraiser", "flag": ""}, {"item": "POA: request ARB rules + architectural guidelines", "when": "This week", "why": "Gates the gym/pool house design AND tells you the lake strip rules", "who": "Presidential Estates property manager (signed your 8/12 approval)", "flag": ""}, {"item": "POA: confirm who maintains the lake/drainage strip", "when": "This week", "why": "Identifies the easement holder whose consent you would need", "who": "Same property manager", "flag": ""}, {"item": "Permit history search - verify 2023 roof permit closed", "when": "Week 1-2", "why": "Open/expired permits complicate future sale and claims", "who": "City of WPB permit portal", "flag": ""}, {"item": "Fumigation bond renewal", "when": "Aug 2027 (annual)", "why": "Keeps the drywood termite warranty in force", "who": "Fumigation company", "flag": ""}, {"item": "Hurricane prep - shutter/impact verification, property photos", "when": "This month (mid-season now)", "why": "You closed mid-season; baseline photos protect claims", "who": "Self + insurance agent", "flag": ""}, {"item": "HVAC service", "when": "Semi-annual (~Oct and ~Apr)", "why": "2 systems, ages ~12 yr and ~3 yr", "who": "HVAC contractor", "flag": ""}, {"item": "Termite inspection", "when": "Annual", "why": "Maintain the bond", "who": "Pest control", "flag": ""}, {"item": "Water heater replacement planning", "when": "~2028-2030 (2018 unit)", "why": "8 yrs old; add expansion tank at replacement", "who": "Plumber", "flag": ""}, {"item": "Test GFCIs + smoke/CO detectors", "when": "Semi-annual", "why": "Safety", "who": "Self", "flag": ""}, {"item": "Re-seal travertine deck", "when": "Annual", "why": "Pool deck longevity", "who": "Hardscape / pressure wash vendor", "flag": ""}, {"item": "Pool gate self-close test", "when": "Monthly", "why": "Child safety - currently blocked by vegetation", "who": "Self", "flag": ""}], "design": [{"room": "Living Room", "item": "Two facing sofas 84-90in", "dir": "White performance-linen slipcover; S&L Miramar / PB York / Cisco Home", "lo": 3200, "hi": 12000}, {"room": "Living Room", "item": "Pair cane lounge chairs", "dir": "S&L Balboa, McGee & Co Colbie, or vintage McGuire via Chairish", "lo": 1600, "hi": 5000}, {"room": "Living Room", "item": "Coffee table", "dir": "Bleached oak or raffia-wrapped; S&L Blake", "lo": 900, "hi": 3500}, {"room": "Living Room", "item": "Rug 10x14", "dir": "Seagrass/abaca with linen border; Fibreworks or S&L Salt Creek", "lo": 1200, "hi": 3800}, {"room": "Living Room", "item": "Drapery, off-white Belgian linen", "dir": "Simple pleat, aged brass rods, mounted high, no pattern", "lo": 1000, "hi": 4000}, {"room": "Living Room", "item": "Lighting - 36-42in woven pendant + pair plaster lamps", "dir": "Palecek Green Oaks or similar", "lo": 800, "hi": 2600}, {"room": "Living Room", "item": "Art over fireplace", "dir": "One large seascape or abstract, float frame", "lo": 400, "hi": 3000}, {"room": "Kitchen", "item": "Counter stools x4, woven", "dir": "S&L Balboa / Palecek Hart - no cushions to fade", "lo": 1200, "hi": 3200}, {"room": "Kitchen", "item": "Island pendant 30-36in", "dir": "Visual Comfort Darlana or woven bell - one larger fixture", "lo": 500, "hi": 1800}, {"room": "Breakfast", "item": "Round pedestal table 54-60in", "dir": "Whitewashed oak; McGee & Co Harvey / PB Banks", "lo": 1300, "hi": 3500}, {"room": "Breakfast", "item": "Rattan chairs x6", "dir": "Natural finish, callback to the house's history", "lo": 1200, "hi": 3600}, {"room": "Kitchen", "item": "Runner + linen roman shade", "dir": "Faded indigo/tan runner 8-10ft; relaxed roman at sink", "lo": 500, "hi": 1600}, {"room": "Family Room", "item": "Sectional or deep slipcovered sofa", "dir": "PB Big Sur / Arhaus Pavo / Lovesac for kid-proofing", "lo": 3000, "hi": 9000}, {"room": "Family Room", "item": "Swivel chair pair", "dir": "Barrel swivels, oatmeal performance texture", "lo": 1400, "hi": 4000}, {"room": "Family Room", "item": "Ottoman + media console + 9x12 rug", "dir": "48in square ottoman, 72in console, flatweave wool", "lo": 1800, "hi": 5500}, {"room": "Pink Room", "item": "Cane/rattan queen bed + bedding + jute rug + romans", "dir": "S&L Avalon; white matelasse + one blush stripe layer", "lo": 2500, "hi": 8000}, {"room": "Blue Room", "item": "Upholstered twin headboards, bedding, pendant, shades", "dir": "Navy or sage headboards; navy stays in the bedding", "lo": 2500, "hi": 8000}, {"room": "Baths", "item": "Mirrors, brass hardware, art, textiles (both baths)", "dir": "Aged brass mirror pink bath; brushed brass hardware blue bath", "lo": 800, "hi": 2500}, {"room": "Backyard", "item": "Fire-pit terrace furnishings - 4 low chairs + gas bowl", "dir": "Propane bowl; lounges/umbrella/planters/table all stay", "lo": 2500, "hi": 6000}, {"room": "Backyard", "item": "String lights + hedge uplighting", "dir": "Hedge-to-house over the new terrace", "lo": 800, "hi": 2500}], "paint": [{"surface": "Living room walls", "color": "BM White Dove OC-17 (or SW Alabaster SW 7008)", "sheen": "Matte"}, {"surface": "ALL interior doors + casings", "color": "Color-match the actual front door; closest stock = BM October Mist 1495 (alts: SW Sea Salt 6204, BM Quiet Moments 1563)", "sheen": "Satin"}, {"surface": "Pink room walls", "color": "BM Swiss Coffee OC-45", "sheen": "Matte"}, {"surface": "Pink room accent / closet interior", "color": "Farrow & Ball Setting Plaster 231", "sheen": "Matte"}, {"surface": "Pink bath walls (paper removed)", "color": "SW Shoji White SW 7042", "sheen": "Satin"}, {"surface": "Blue room walls (paper removed)", "color": "SW Shoji White SW 7042", "sheen": "Matte"}, {"surface": "Blue bath - light blue becomes tan", "color": "SW Accessible Beige SW 7036 (alt BM Manchester Tan HC-81)", "sheen": "Satin"}, {"surface": "All ceilings", "color": "Flat white", "sheen": "Flat"}, {"surface": "Baseboards / trim", "color": "Match wall white", "sheen": "Semi-gloss or satin"}], "setup": ["Rekey all exterior locks; collect garage remotes and gate fobs", "FPL \u2014 transfer electric service into your names", "City of WPB Utilities \u2014 start water/sewer service", "City of WPB \u2014 confirm trash/recycling pickup days, order bins", "Confirm homeowner's insurance binder is active", "Price a preferred-risk flood policy (Zone X \u2014 not lender-required)", "POA \u2014 owner portal login and dues autopay", "USPS change of address; check mailbox key", "Internet/TV install scheduled before move-in", "Driver's licenses, vehicle registration, voter registration updated", "Pool service \u2014 weekly contract started", "Landscaping \u2014 bi-weekly mow/edge plus quarterly trimming", "Irrigation \u2014 full system check booked (Zone 3 is dead)", "Pest control \u2014 quarterly general pest after fumigation", "HVAC \u2014 semi-annual service contract signed", "Buy a case of ceiling-return filters (both were dirty at inspection)", "Build the house binder: closing docs, deed, title policy, survey, all reports", "Ask seller's agent for paint colors, contractor contacts, leftover tile", "Install leak sensors (water heater pan, under kitchen sink, hall bath)", "Photograph the whole property as an insurance baseline"], "reference": [{"title": "Shipping-container gym / pool house", "body": "<p>A raw or lightly-modified steel container is <b>very unlikely to be approvable</b> here. Three gates, in order:</p>\n<ol><li><b>Presidential Estates POA</b> (hardest \u2014 start here). Your title commitment lists the Declaration (ORB 2453/1697, seven amendments) plus a Development Restriction Agreement (ORB 24647/1813). Communities like this almost always require prior written ARB approval and commonly prohibit metal buildings outright. Email the property manager before spending anything.</li>\n<li><b>City of WPB zoning</b>. Cargo containers are generally not permitted as permanent accessory structures in single-family districts. A habitable conditioned gym needs full permits: engineered foundation and tie-downs for ~170 mph design winds, impact-rated openings, electrical, and plumbing if you add a bath.</li>\n<li><b>Engineering economics</b>. Once engineered to code, a permitted 20ft container gym runs <b>$45k\u201390k</b> \u2014 no savings over conventional construction, with lower resale contribution. Steel also sweats badly here; closed-cell foam is effectively mandatory.</li></ol>\n<table><thead><tr><th>Option</th><th>Footprint</th><th>All-in</th><th>Notes</th></tr></thead><tbody>\n<tr><td><b>A. Site-built to match the house</b></td><td>12\u00d720 to 14\u00d728</td><td class=\"price\">$85k\u2013175k</td><td>$60k\u2013100k without plumbing. Best approval odds and resale.</td></tr>\n<tr><td><b>B. Prefab studio</b> (Studio Shed, Kanga)</td><td>10\u00d714 to 12\u00d724</td><td class=\"price\">$55k\u2013110k</td><td>Confirm FL Product Approval and signed/sealed drawings for 170 mph.</td></tr>\n<tr><td><b>C. Clad &amp; permitted container</b></td><td>8\u00d720</td><td class=\"price\">$45k\u201390k</td><td>Only if the POA says yes in writing first.</td></tr>\n<tr><td><b>D. Open-air pergola gym</b></td><td>300\u2013400 sf</td><td class=\"price\">$15k\u201340k</td><td>No habitable-structure trigger; much lighter ARB lift.</td></tr></tbody></table>\n<p><b>Free diligence, two weeks:</b> email the POA for ARB rules; call 811 plus FPL locates for the transformer feed at that corner; take the survey to WPB Development Services and ask their stance on containers, accessory setbacks, height, lot coverage, and whether a half-bath needs its own sewer tie-in.</p>"}, {"title": "The rear strip and the drainage easement", "body": "<p><b>Good news:</b> your deed conveys Lot 54 <i>plus</i> a fee-owned strip of Tract \"C\" behind the rear lot line \u2014 roughly <b>25ft wide at the south end, 33ft at the north, by 115.43ft long (~3,300 sq ft)</b>. Beyond it, the survey marks \"REMAINDER OF TRACT C (NOT INCLUDED).\"</p>\n<p><b>The catch:</b> that entire strip sits inside a <b>60ft drainage easement</b> dedicated on the plat (Plat Book 31, Pages 107\u2013112; title exception #9). You own the dirt; the easement holder owns the right to use, access, regrade and clear it. There is also a <b>10ft utility easement</b> just inside the rear lot line, with an FPL transformer at the southwest corner.</p>\n<p><b>Semi-permanent structures: realistically no.</b> Sheds on skids, gazebos, decks on grade and playsets with footers get treated the same as permanent ones \u2014 removable without compensation whenever the holder needs access, and they show up as encroachments on your own survey at resale.</p>\n<p><b>What you can do:</b> mow and maintain it as extended yard; low groundcovers and beds are usually tolerated (trees and large shrubs are usually not); fully movable items at your own risk; stepping stones on grade, often fine. No fill and no grade changes without written consent \u2014 regrading a drainage easement is the fastest route to a violation letter, and it can push water toward your own house.</p>\n<p><b>The one upgrade path:</b> ask the easement holder for a written license or partial release for specific improvements. Pull Plat Book 31 Pages 107\u2013112 to see who the easement is dedicated to, ask the POA manager who actually maintains the lake bank, then request their consent form in writing. Keep that letter \u2014 your future buyer's title company will want it.</p>"}]};
+const TABS = [["dash","Dashboard"],["punch","Punch list"],["bids","Bid packages"],
+              ["sched","Schedule"],["setup","Setup & deadlines"],["design","Design"],["ref","Reference"]];
+const STATUSES = ["Not started","Quotes out","Scheduled","In progress","Done","Deferred","N/A"];
+let S = {items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null};
+let F = {q:"",pri:"",pkg:"",st:"",hideNA:false,hideDone:false,sort:null,dir:1};
+
+/* ---------- storage: live API -> Claude shared -> this browser -> memory ---------- */
+const KEY="embassy-3125-v1"; let mode="memory"; let lastEdit=0; let pollTimer=null;
+function who(){ try{ return localStorage.getItem(KEY+"-who")||""; }catch(e){ return ""; } }
+function setWho(v){ try{ localStorage.setItem(KEY+"-who",v); }catch(e){} renderChrome(); }
+function pass(){ try{ return localStorage.getItem(KEY+"-pass")||""; }catch(e){ return ""; } }
+function setPass(v){ try{ localStorage.setItem(KEY+"-pass",v); }catch(e){} }
+function hdr(){ const h={}; const p=pass(); if(p)h["x-app-key"]=p; return h; }
+async function api(method,body){
+  const c=new AbortController(); const to=setTimeout(()=>c.abort(),4000);
+  try{
+    const r=await fetch("/api/state",{method:method,signal:c.signal,
+      headers:Object.assign({"Content-Type":"application/json"},hdr()),body:body});
+    clearTimeout(to);
+    if(r.status===401){ const p=prompt("Passphrase for this project workspace:"); if(p){setPass(p); return api(method,body);} throw new Error("auth"); }
+    if(!r.ok) throw new Error("http "+r.status);
+    return method==="GET" ? await r.json() : true;
+  }catch(e){ clearTimeout(to); throw e; }
+}
+function adopt(v){
+  if(!v) return false;
+  S=Object.assign({items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null},
+                  typeof v==="string"?JSON.parse(v):v);
+  seedDesign(); return true;
+}
+async function load(){
+  try{ const r=await api("GET"); mode="live"; if(r&&r.state) adopt(r.state);
+       if(!pollTimer) pollTimer=setInterval(poll,20000); return; }catch(e){}
+  try{
+    if(window.storage&&window.storage.get){
+      mode="shared";
+      try{ const r=await window.storage.get(KEY,true); if(r&&r.value) adopt(r.value); }catch(e){}
+      return;
+    }
+  }catch(e){}
+  try{ const v=localStorage.getItem(KEY); if(v)adopt(v); mode="browser"; }catch(e){ mode="memory"; }
+}
+let t=null;
+function save(){
+  lastEdit=Date.now(); clearTimeout(t);
+  t=setTimeout(async()=>{
+    S._meta={by:who()||"someone",at:new Date().toISOString()};
+    const str=JSON.stringify(S);
+    try{
+      if(mode==="live"){ await api("PUT",str); flag("Saved — everyone sees this"); return; }
+      if(window.storage&&window.storage.set){ await window.storage.set(KEY,str,true); flag("Saved for everyone"); return; }
+      localStorage.setItem(KEY,str); flag("Saved on this device");
+    }catch(e){ flag("Save failed — use Backup JSON"); }
+  },600);
+}
+async function poll(){
+  if(mode!=="live") return;
+  if(Date.now()-lastEdit < 8000) return;                 // don't clobber someone mid-edit
+  try{
+    const r=await api("GET"); if(!r||!r.state) return;
+    const remote=typeof r.state==="string"?JSON.parse(r.state):r.state;
+    const rAt=remote._meta&&remote._meta.at, lAt=S._meta&&S._meta.at;
+    if(rAt && (!lAt || rAt>lAt)){ adopt(remote); renderAll(); renderChrome(); flag("Updated from "+((remote._meta&&remote._meta.by)||"another member")); }
+  }catch(e){}
+}
+async function refresh(){
+  if(mode==="live"){ try{ const r=await api("GET"); if(r&&r.state){adopt(r.state);renderAll();renderChrome();flag("Pulled latest");} }
+    catch(e){ flag("Could not reach the server"); } return; }
+  if(window.storage&&window.storage.get){
+    try{ const r=await window.storage.get(KEY,true); if(r&&r.value){adopt(r.value);renderAll();renderChrome();flag("Pulled latest");} }
+    catch(e){ flag("Nothing saved yet"); } return; }
+  flag("Nothing to pull — local mode");
+}
+function flag(m){ const e=document.getElementById('save'); if(!e)return;
+  e.textContent=m; setTimeout(()=>{ if(e.textContent===m) renderChrome(); },2600); }
+function renderChrome(){
+  const e=document.getElementById('save'); if(!e)return;
+  const m=S._meta;
+  const stamp=m&&m.at?(" · last edit "+new Date(m.at).toLocaleString()+(m.by?" by "+m.by:"")):"";
+  const label={live:"Live shared workspace",shared:"Shared workspace",browser:"This device only",
+               memory:"Not saved — export JSON"}[mode];
+  e.textContent=label+stamp;
+  const w=document.getElementById('who'); if(w&&w.value!==who())w.value=who();
+  const b=document.getElementById('sharenote'); if(b) b.style.display=(mode==="live"||mode==="shared")?"block":"none";
+  const nb=document.getElementById('localnote'); if(nb) nb.style.display=(mode==="live"||mode==="shared")?"none":"block";
+}
+function st(id){ return (S.items[id]&&S.items[id].status)||"Not started"; }
+function fld(id,k){ return (S.items[id]&&S.items[id][k])||""; }
+function setItem(id,k,v){ S.items[id]=S.items[id]||{}; S.items[id][k]=v; save(); renderAll(); }
+const money=n=>n?("$"+Math.round(n).toLocaleString()):"–";
+
+/* ---------- rollups ---------- */
+function live(){ return DATA.items.filter(i=>st(i.id)!=="N/A"); }
+function rollup(){
+  const L=live(), d=L.filter(i=>st(i.id)==="Done");
+  const quoted=L.reduce((s,i)=>s+(parseFloat(fld(i.id,'quoted'))||0),0);
+  const remHi=L.filter(i=>st(i.id)!=="Done").reduce((s,i)=>s+i.hi,0);
+  return {n:L.length,done:d.length,pct:L.length?Math.round(d.length/L.length*100):0,
+          lo:L.reduce((s,i)=>s+i.lo,0),hi:L.reduce((s,i)=>s+i.hi,0),quoted,remHi,
+          na:DATA.items.length-L.length};
+}
+function pkgStats(name){
+  const all=DATA.items.filter(i=>i.pkg===name), L=all.filter(i=>st(i.id)!=="N/A");
+  return {all,L,done:L.filter(i=>st(i.id)==="Done").length,
+          lo:L.reduce((s,i)=>s+i.lo,0),hi:L.reduce((s,i)=>s+i.hi,0),
+          remHi:L.filter(i=>st(i.id)!=="Done").reduce((s,i)=>s+i.hi,0),
+          quoted:L.reduce((s,i)=>s+(parseFloat(fld(i.id,'quoted'))||0),0)};
+}
+
+/* ---------- dashboard ---------- */
+function renderDash(){
+  const r=rollup();
+  const p1=DATA.items.filter(i=>i.pri==="P1"&&!["Done","N/A"].includes(st(i.id)));
+  const p2=DATA.items.filter(i=>i.pri==="P2"&&!["Done","N/A"].includes(st(i.id)));
+  document.getElementById('p-dash').innerHTML=`
+  <div class="banner"><b>The clock that matters:</b> the 4-point inspection marked the roof UNSATISFACTORY, so your
+  carrier will want documented repairs — confirm the exact deadline the day the binder issues. The roof warranty
+  transfer window (often 30–60 days from sale) closes around <b>Sep 11, 2026</b>. And the house is empty, which is the
+  only time fumigation and paint will ever be this cheap.</div>
+  <div class="kpis">
+    <div class="kpi"><div class="lab">Progress</div><div class="val">${r.pct}%</div>
+      <div class="note">${r.done} of ${r.n} live items done</div><div class="bar"><i style="width:${r.pct}%"></i></div></div>
+    <div class="kpi"><div class="lab">Budget range</div><div class="val">${money(r.lo)}</div>
+      <div class="note">to ${money(r.hi)} · excludes ${r.na} marked N/A</div></div>
+    <div class="kpi"><div class="lab">Still to spend</div><div class="val">${money(r.remHi)}</div>
+      <div class="note">high estimate, items not done</div></div>
+    <div class="kpi"><div class="lab">Quoted so far</div><div class="val">${money(r.quoted)}</div>
+      <div class="note">sum of quotes you've entered</div></div>
+    <div class="kpi"><div class="lab">P1 open</div><div class="val">${p1.length}</div>
+      <div class="note">safety &amp; insurance critical</div></div>
+    <div class="kpi"><div class="lab">P2 open</div><div class="val">${p2.length}</div>
+      <div class="note">active water / moisture</div></div>
+  </div>
+  <h2 style="margin:26px 0 10px;font-size:22px">Do these first</h2>
+  <table><thead><tr><th class="nosort" style="width:70px">Priority</th><th class="nosort">Item</th>
+    <th class="nosort" style="width:200px">Bid package</th><th class="nosort" style="width:150px">Status</th></tr></thead><tbody>
+    ${[...p1,...p2].slice(0,12).map(i=>`<tr><td class="pri" style="background:var(--${i.pri.toLowerCase()})">${i.pri}</td>
+      <td>${esc(i.item)}<div class="ref">${esc(i.ref)}</div></td><td>${esc(i.pkg)}</td>
+      <td>${sel(i.id)}</td></tr>`).join("")}
+  </tbody></table>
+  <p class="hint">This dashboard is the working home for the project. It cannot write into the .xlsx file — no web page
+  can — so when you want the data in Excel, use <b>Export CSV</b> and paste it into the Punch List tab. Use
+  <b>Backup JSON</b> before anything you'd hate to lose.</p>`;
+}
+
+/* ---------- punch list ---------- */
+function sel(id){
+  const v=st(id);
+  return `<select class="st" onchange="setItem(${id},'status',this.value)">`+
+    STATUSES.map(s=>`<option${s===v?" selected":""}>${s}</option>`).join("")+`</select>`;
+}
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function filtered(){
+  let L=DATA.items.filter(i=>{
+    const s=st(i.id);
+    if(F.hideNA&&s==="N/A")return false;
+    if(F.hideDone&&s==="Done")return false;
+    if(F.pri&&i.pri!==F.pri)return false;
+    if(F.pkg&&i.pkg!==F.pkg)return false;
+    if(F.st&&s!==F.st)return false;
+    if(F.q){const q=F.q.toLowerCase();
+      if(!(i.item+i.ref+i.trade+i.pkg+i.why+fld(i.id,'vendor')+fld(i.id,'notes')).toLowerCase().includes(q))return false;}
+    return true;});
+  if(F.sort){const k=F.sort;
+    L=L.slice().sort((a,b)=>{let x=k==="status"?st(a.id):a[k],y=k==="status"?st(b.id):b[k];
+      if(typeof x==="number")return (x-y)*F.dir;
+      return String(x).localeCompare(String(y))*F.dir;});}
+  return L;
+}
+function renderPunch(){
+  const L=filtered(), pkgs=[...new Set(DATA.items.map(i=>i.pkg))].sort();
+  const lo=L.reduce((s,i)=>s+(st(i.id)==="N/A"?0:i.lo),0), hi=L.reduce((s,i)=>s+(st(i.id)==="N/A"?0:i.hi),0);
+  document.getElementById('p-punch').innerHTML=`
+  <div class="filters">
+    <input type="text" placeholder="Search items, references, vendors, notes…" value="${esc(F.q)}"
+      oninput="F.q=this.value;renderPunch()">
+    ${["","P1","P2","P3","P4","Design","Setup"].map(p=>`<span class="chip${F.pri===p?" on":""}"
+      onclick="F.pri='${p}';renderPunch()">${p||"All priorities"}</span>`).join("")}
+    <select onchange="F.pkg=this.value;renderPunch()"><option value="">All bid packages</option>
+      ${pkgs.map(p=>`<option${F.pkg===p?" selected":""}>${p}</option>`).join("")}</select>
+    <select onchange="F.st=this.value;renderPunch()"><option value="">Any status</option>
+      ${STATUSES.map(s=>`<option${F.st===s?" selected":""}>${s}</option>`).join("")}</select>
+    <label><input type="checkbox" class="ck" ${F.hideNA?"checked":""} onchange="F.hideNA=this.checked;renderPunch()"> hide N/A</label>
+    <label><input type="checkbox" class="ck" ${F.hideDone?"checked":""} onchange="F.hideDone=this.checked;renderPunch()"> hide done</label>
+    <label><input type="checkbox" class="ck" ${F.why?"checked":""} onchange="F.why=this.checked;renderPunch()"> show "why"</label>
+    <span style="font-size:12.5px;color:#6b705f">${L.length} shown · ${money(lo)}–${money(hi)}</span>
+  </div>
+  <table><thead><tr>
+    <th onclick="sortBy('id')">#</th><th onclick="sortBy('pri')">Pri</th><th onclick="sortBy('item')">Item</th>
+    <th onclick="sortBy('trade')">Trade</th><th onclick="sortBy('lo')">Budget</th>
+    <th class="nosort" style="width:130px">Vendor</th><th class="nosort" style="width:92px">Quoted $</th>
+    <th onclick="sortBy('status')" style="width:132px">Status</th>
+    <th class="nosort" style="width:118px">Target</th><th class="nosort" style="width:150px">Notes</th>
+  </tr></thead><tbody>
+  ${L.map(i=>{const s=st(i.id);
+    return `<tr class="${s==="Done"?"done":s==="N/A"?"na":""}">
+      <td>${i.id}</td><td class="pri" style="background:var(--${i.pri.toLowerCase()},#fff)">${i.pri}</td>
+      <td><b>${esc(i.item)}</b><div class="ref">${esc(i.ref)}</div>
+        ${F.why?`<div class="why">${esc(i.why)}</div>`:""}</td>
+      <td>${esc(i.trade)}<div class="ref">${esc(i.pkg)}</div></td>
+      <td class="price">${money(i.lo)}<div class="ref">to ${money(i.hi)}</div></td>
+      <td><input class="cell" value="${esc(fld(i.id,'vendor'))}" placeholder="who"
+          onchange="setItem(${i.id},'vendor',this.value)"></td>
+      <td><input class="cell" value="${esc(fld(i.id,'quoted'))}" placeholder="$"
+          onchange="setItem(${i.id},'quoted',this.value)"></td>
+      <td>${sel(i.id)}</td>
+      <td><input class="cell" type="date" value="${esc(fld(i.id,'target'))}"
+          onchange="setItem(${i.id},'target',this.value)"></td>
+      <td><input class="cell" value="${esc(fld(i.id,'notes'))}" placeholder="notes"
+          onchange="setItem(${i.id},'notes',this.value)"></td></tr>`;}).join("")}
+  </tbody></table>`;
+}
+function sortBy(k){ F.dir=(F.sort===k)?-F.dir:1; F.sort=k; renderPunch(); }
+
+/* ---------- bid packages ---------- */
+function renderBids(){
+  document.getElementById('p-bids').innerHTML=
+  `<p class="hint" style="margin-bottom:16px">One contractor, one mobilization, one price. "Copy RFQ" puts the whole
+   package — scope, item list and report references — on your clipboard, ready to paste into an email.</p>`+
+  DATA.packages.map(p=>{const s=pkgStats(p.name);
+    const complete=s.L.length>0&&s.done===s.L.length;
+    return `<div class="pkg${complete?" complete":""}">
+      <div class="pkghd">
+        <div><h3>${esc(p.name)}</h3>
+          <div class="meta">${s.L.length} live item${s.L.length===1?"":"s"} · ${s.done} done ·
+            ${money(s.lo)}–${money(s.hi)} · ${money(s.remHi)} still to spend
+            ${s.quoted?" · quoted "+money(s.quoted):""}</div></div>
+        <button onclick="copyRFQ('${esc(p.name)}')">Copy RFQ</button>
+      </div>
+      <div class="pkgbody">
+        <div class="who"><b>Who to call:</b> ${esc(p.who)}</div>
+        <div class="rfq">${esc(p.rfq)}</div>
+        <table><thead><tr><th class="nosort">#</th><th class="nosort">Scope item</th>
+          <th class="nosort">Report reference</th><th class="nosort">Pri</th>
+          <th class="nosort">Budget</th><th class="nosort" style="width:132px">Status</th></tr></thead><tbody>
+        ${s.all.map(i=>{const x=st(i.id);
+          return `<tr class="${x==="Done"?"done":x==="N/A"?"na":""}"><td>${i.id}</td><td>${esc(i.item)}</td>
+            <td class="ref">${esc(i.ref)}</td><td class="pri">${i.pri}</td>
+            <td class="price">${money(i.lo)}–${money(i.hi)}</td><td>${sel(i.id)}</td></tr>`;}).join("")}
+        </tbody></table>
+      </div></div>`;}).join("");
+}
+function copyRFQ(name){
+  const p=DATA.packages.find(x=>x.name===name), s=pkgStats(name);
+  const lines=[`REQUEST FOR QUOTE — ${name}`,`3125 Embassy Drive, West Palm Beach, FL 33401`,"",
+    `SCOPE: ${p.rfq}`,"",`ITEMS (${s.L.length}):`];
+  s.L.forEach(i=>{ if(st(i.id)!=="Done") lines.push(`${i.id}. ${i.item}\n    Source: ${i.ref}`); });
+  lines.push("","Please price each line separately. Provide license and insurance certificates,");
+  lines.push("and photo documentation on completion.");
+  const txt=lines.join("\n");
+  navigator.clipboard.writeText(txt).then(()=>alert("RFQ copied to clipboard."),
+    ()=>{ const w=window.open("","_blank"); w.document.write("<pre>"+esc(txt)+"</pre>"); });
+}
+
+/* ---------- schedule / setup / design / reference ---------- */
+function ck(store,key,label,extra){
+  const on=S[store][key];
+  return `<label style="display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-bottom:1px dashed #E0D8C6">
+    <input type="checkbox" class="ck" ${on?"checked":""} onchange="S['${store}']['${key}']=this.checked;save();renderAll()">
+    <span style="${on?"color:#7d8a76;text-decoration:line-through":""}">${label}${extra||""}</span></label>`;
+}
+function renderSched(){
+  const done=DATA.schedule.filter((_,k)=>S.sched[k]).length;
+  document.getElementById('p-sched').innerHTML=`
+  <div class="kpis"><div class="kpi"><div class="lab">Weeks complete</div>
+    <div class="val">${done} / ${DATA.schedule.length}</div>
+    <div class="note">target move-in ready mid-October 2026</div>
+    <div class="bar"><i style="width:${Math.round(done/DATA.schedule.length*100)}%"></i></div></div></div>
+  <p class="hint" style="margin:14px 0 16px">Fumigation gates all interior work. The roof gates the insurance clock.
+  The moldy air handler must be replaced before insulation and paint. Wallpaper and paint must finish before furniture.</p>
+  <table class="sched"><thead><tr><th class="nosort" style="width:44px">Done</th><th class="nosort" style="width:70px">Week</th>
+    <th class="nosort" style="width:120px">Dates</th><th class="nosort" style="width:200px">Workstream</th>
+    <th class="nosort">Key tasks</th></tr></thead><tbody>
+  ${DATA.schedule.map((r,k)=>`<tr class="${S.sched[k]?"done":""}">
+    <td><input type="checkbox" class="ck" ${S.sched[k]?"checked":""}
+        onchange="S.sched[${k}]=this.checked;save();renderAll()"></td>
+    <td><b>${esc(r.wk)}</b></td><td>${esc(r.dates)}</td><td><b>${esc(r.stream)}</b></td>
+    <td>${esc(r.tasks)}</td></tr>`).join("")}
+  </tbody></table>`;
+}
+function renderSetup(){
+  const dDone=DATA.deadlines.filter((_,k)=>S.deadlines[k]).length;
+  const sDone=DATA.setup.filter((_,k)=>S.setup[k]).length;
+  document.getElementById('p-setup').innerHTML=`
+  <div class="kpis">
+    <div class="kpi"><div class="lab">Deadlines handled</div><div class="val">${dDone} / ${DATA.deadlines.length}</div>
+      <div class="bar"><i style="width:${Math.round(dDone/DATA.deadlines.length*100)}%"></i></div></div>
+    <div class="kpi"><div class="lab">Setup tasks done</div><div class="val">${sDone} / ${DATA.setup.length}</div>
+      <div class="bar"><i style="width:${Math.round(sDone/DATA.setup.length*100)}%"></i></div></div>
+  </div>
+  <h2 style="margin:26px 0 8px;font-size:22px">Hard deadlines &amp; transfers</h2>
+  <table><thead><tr><th class="nosort" style="width:44px">Done</th><th class="nosort">Item</th>
+    <th class="nosort" style="width:220px">When</th><th class="nosort">Why</th>
+    <th class="nosort" style="width:220px">Who</th></tr></thead><tbody>
+  ${DATA.deadlines.map((d,k)=>`<tr class="${S.deadlines[k]?"done":""}">
+    <td><input type="checkbox" class="ck" ${S.deadlines[k]?"checked":""}
+        onchange="S.deadlines[${k}]=this.checked;save();renderAll()"></td>
+    <td><b>${esc(d.item)}</b>${d.flag?` <span style="color:#B4584A;font-size:11.5px">${esc(d.flag)}</span>`:""}</td>
+    <td>${esc(d.when)}</td><td class="why">${esc(d.why)}</td><td>${esc(d.who)}</td></tr>`).join("")}
+  </tbody></table>
+  <h2 style="margin:30px 0 8px;font-size:22px">Move-in setup</h2>
+  <div style="background:#fff;border:1px solid var(--line);padding:8px 18px;max-width:900px">
+  ${DATA.setup.map((s,k)=>ck('setup',k,esc(s))).join("")}</div>`;
+}
+function seedDesign(){
+  if(!Array.isArray(S.designRows)||!S.designRows.length){
+    S.designRows=DATA.design.map((d,k)=>({room:d.room,item:d.item,dir:d.dir,lo:d.lo,hi:d.hi,
+      link:"",status:(S.design&&S.design[k])||""}));
+  }
+  S.designRows.forEach(r=>{ if(r.link===undefined)r.link=""; if(r.status===undefined)r.status=""; });
+}
+function safeURL(u){
+  u=String(u||"").trim(); if(!u)return "";
+  if(/^[a-z][a-z0-9+.\-]*:/i.test(u)){                 // already carries a scheme
+    return /^https?:\/\/[^\s]+$/i.test(u)?u:"";        // only http/https survive
+  }
+  u="https://"+u.replace(/^\/+/,"");                    // bare domain -> https
+  return /^https?:\/\/[^\s]+$/i.test(u)?u:"";
+}
+function setDesign(k,f,v){
+  if(f==="lo"||f==="hi"){ v=parseFloat(String(v).replace(/[^0-9.\-]/g,""))||0; }
+  S.designRows[k][f]=v; save(); renderDesign(); renderDash();
+}
+function addDesign(){
+  S.designRows.push({room:"",item:"",dir:"",lo:0,hi:0,link:"",status:""});
+  save(); renderDesign();
+  setTimeout(()=>{const n=document.querySelectorAll('#p-design input.cell');
+    if(n.length)n[n.length-6].focus();},60);
+}
+function delDesign(k){
+  const r=S.designRows[k];
+  if(r.room||r.item){ if(!confirm('Delete "'+(r.item||r.room)+'"?'))return; }
+  S.designRows.splice(k,1); save(); renderDesign(); renderDash();
+}
+function reseedDesign(){
+  if(!confirm("Restore the original 20 suggested items? Your own rows and edits on this tab will be lost."))return;
+  S.designRows=null; S.design={}; seedDesign(); save(); renderDesign(); renderDash();
+}
+function expDesignCSV(){
+  const H=["Room","Item","Direction","Budget Low","Budget High","Link","Status"];
+  const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const lab={"":"Not ordered",ord:"Ordered",got:"Delivered",na:"N/A"};
+  const rows=S.designRows.map(r=>[r.room,r.item,r.dir,r.lo,r.hi,r.link,lab[r.status]||""].map(q).join(","));
+  dl("3125_Embassy_design_budget.csv",[H.map(q).join(","),...rows].join("\n"),"text/csv");
+}
+function renderDesign(){
+  seedDesign();
+  const rows=S.designRows;
+  const lo=rows.reduce((s,d)=>s+(d.status==="na"?0:(+d.lo||0)),0);
+  const hi=rows.reduce((s,d)=>s+(d.status==="na"?0:(+d.hi||0)),0);
+  const got=rows.filter(d=>d.status==="got").length;
+  const ord=rows.filter(d=>d.status==="ord").length;
+  const spent=rows.filter(d=>d.status==="got").reduce((s,d)=>s+(+d.hi||0),0);
+  document.getElementById('p-design').innerHTML=`
+  <div class="kpis">
+    <div class="kpi"><div class="lab">Furnishing budget</div><div class="val">${money(lo)}</div>
+      <div class="note">to ${money(hi)} · excludes items marked N/A</div></div>
+    <div class="kpi"><div class="lab">Delivered</div><div class="val">${got} / ${rows.length}</div>
+      <div class="bar"><i style="width:${rows.length?Math.round(got/rows.length*100):0}%"></i></div></div>
+    <div class="kpi"><div class="lab">On order</div><div class="val">${ord}</div>
+      <div class="note">ordered, not yet delivered</div></div>
+    <div class="kpi"><div class="lab">Committed (delivered)</div><div class="val">${money(spent)}</div>
+      <div class="note">high estimate of delivered rows</div></div>
+  </div>
+  <p class="hint" style="margin:14px 0 0">Sequence after paint (weeks 5–6). Wallpaper removal and interior paint live
+  in the punch list, not in this total, so the two never double-count.</p>
+  <div class="filters" style="margin:16px 0 12px">
+    <button onclick="addDesign()">+ Add item</button>
+    <button class="ghost" onclick="expDesignCSV()">Export design CSV</button>
+    <button class="ghost" onclick="reseedDesign()">Restore suggested list</button>
+    <span style="font-size:12.5px;color:#6b705f">Every field is yours to edit — overwrite the suggestions or clear the
+    list and build your own. Budgets accept plain numbers; links accept a URL or just a domain.</span>
+  </div>
+  <table><thead><tr>
+    <th class="nosort" style="width:112px">Room</th><th class="nosort" style="width:200px">Item</th>
+    <th class="nosort">Direction / source notes</th>
+    <th class="nosort" style="width:92px">Budget low</th><th class="nosort" style="width:92px">Budget high</th>
+    <th class="nosort" style="width:170px">Link</th>
+    <th class="nosort" style="width:126px">Status</th><th class="nosort" style="width:34px"></th>
+  </tr></thead><tbody>
+  ${rows.map((d,k)=>{const v=d.status||"", u=safeURL(d.link);
+    return `<tr class="${v==="got"?"done":v==="na"?"na":""}">
+    <td><input class="cell" value="${esc(d.room)}" placeholder="room"
+        onchange="setDesign(${k},'room',this.value)"></td>
+    <td><input class="cell" value="${esc(d.item)}" placeholder="what it is"
+        onchange="setDesign(${k},'item',this.value)"></td>
+    <td><input class="cell" value="${esc(d.dir)}" placeholder="finish, size, maker, alternates…"
+        onchange="setDesign(${k},'dir',this.value)"></td>
+    <td><input class="cell" style="text-align:right" value="${d.lo||""}" placeholder="0"
+        onchange="setDesign(${k},'lo',this.value)"></td>
+    <td><input class="cell" style="text-align:right" value="${d.hi||""}" placeholder="0"
+        onchange="setDesign(${k},'hi',this.value)"></td>
+    <td><input class="cell" value="${esc(d.link)}" placeholder="paste a URL"
+        onchange="setDesign(${k},'link',this.value)">
+        ${u?`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer"
+             style="font-size:11.5px;color:var(--palm)">open ↗</a>`:""}</td>
+    <td><select class="st" onchange="setDesign(${k},'status',this.value)">
+      ${[["","Not ordered"],["ord","Ordered"],["got","Delivered"],["na","N/A"]].map(o=>
+        `<option value="${o[0]}"${v===o[0]?" selected":""}>${o[1]}</option>`).join("")}
+    </select></td>
+    <td><button class="ghost" title="Delete row" onclick="delDesign(${k})"
+        style="padding:3px 8px;border-color:var(--line);background:#fff;color:#B4584A">×</button></td></tr>`;}).join("")}
+  </tbody></table>
+  ${rows.length?"":`<p class="hint">No items yet — hit <b>+ Add item</b>, or <b>Restore suggested list</b> to bring
+   back the original 20.</p>`}
+  <h2 style="margin:30px 0 8px;font-size:22px">Paint schedule</h2>
+  <table><thead><tr><th class="nosort">Surface</th><th class="nosort">Color</th>
+    <th class="nosort" style="width:170px">Sheen</th></tr></thead><tbody>
+  ${DATA.paint.map(p=>`<tr><td>${esc(p.surface)}</td><td>${esc(p.color)}</td><td>${esc(p.sheen)}</td></tr>`).join("")}
+  </tbody></table>
+  <p class="hint">The one move that ties the house together: have the paint store color-match the <b>actual front
+  door</b> and use that formula on every interior door. Sample on-wall in 2ft squares — these lake-facing rooms turn
+  cooler in the afternoon.</p>`;
+}
+function renderRef(){
+  document.getElementById('p-ref').innerHTML=DATA.reference.map(r=>
+    `<div class="refdoc"><h3>${esc(r.title)}</h3>${r.body}</div>`).join("");
+}
+
+/* ---------- export / import ---------- */
+function dl(name,txt,type){
+  const b=new Blob([txt],{type:type}); const u=URL.createObjectURL(b);
+  const a=document.createElement('a'); a.href=u; a.download=name; a.click(); URL.revokeObjectURL(u);
+}
+function expCSV(){
+  const H=["#","Priority","Item","Report reference","Trade","Bid package","Why it matters",
+           "Budget Low","Budget High","Vendor","Quoted $","Status","Target date","Notes"];
+  const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const rows=DATA.items.map(i=>[i.id,i.pri,i.item,i.ref,i.trade,i.pkg,i.why,i.lo,i.hi,
+    fld(i.id,'vendor'),fld(i.id,'quoted'),st(i.id),fld(i.id,'target'),fld(i.id,'notes')].map(q).join(","));
+  dl("3125_Embassy_punch_list.csv",[H.map(q).join(","),...rows].join("\n"),"text/csv");
+}
+function expJSON(){ dl("3125_Embassy_backup.json",JSON.stringify(S,null,2),"application/json"); }
+function impJSON(el){
+  const f=el.files[0]; if(!f)return; const r=new FileReader();
+  r.onload=()=>{ try{ S=Object.assign({items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null},JSON.parse(r.result));
+    seedDesign(); save(); renderAll(); renderChrome(); alert("Restored."); }catch(e){ alert("That file could not be read."); } };
+  r.readAsText(f); el.value="";
+}
+function wipe(){ if(confirm("Clear every status, quote, note and design row? Export a backup first if unsure."))
+  { S={items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null}; seedDesign(); save(); renderAll(); renderChrome(); } }
+
+/* ---------- boot ---------- */
+function renderAll(){ renderDash();renderPunch();renderBids();renderSched();renderSetup();renderDesign();renderRef(); }
+function go(id){ TABS.forEach(([k])=>{
+    document.getElementById('p-'+k).classList.toggle('on',k===id);
+    document.querySelector('[data-t="'+k+'"]').classList.toggle('on',k===id); }); }
+document.getElementById('nav').innerHTML=TABS.map(([k,l])=>
+  `<a data-t="${k}" class="${k==='dash'?'on':''}" onclick="go('${k}')">${l}</a>`).join("");
+load().then(()=>{ seedDesign(); renderAll(); renderRef(); renderChrome(); });
+</script>
+</body>
+</html>

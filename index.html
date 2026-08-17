@@ -136,7 +136,8 @@ const DATA = {"items": [{"id": 1, "pri": "P1", "item": "Tent fumigation - whole 
 const TABS = [["dash","Dashboard"],["punch","Punch list"],["bids","Bid packages"],
               ["sched","Schedule"],["setup","Setup & deadlines"],["design","Design"],["ref","Reference"]];
 const STATUSES = ["Not started","Quotes out","Scheduled","In progress","Done","Deferred","N/A"];
-let S = {items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null,paintRows:null};
+let S = {items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null,paintRows:null,
+         itemEdits:{},customItems:[],dnotes:{},snotes:{}};
 let F = {q:"",pri:"",pkg:"",st:"",hideNA:false,hideDone:false,sort:null,dir:1};
 
 /* ---------- storage: live API -> Claude shared -> this browser -> memory ---------- */
@@ -159,7 +160,7 @@ async function api(method,body){
 }
 function adopt(v){
   if(!v) return false;
-  S=Object.assign({items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null,paintRows:null},
+  S=Object.assign({items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null,paintRows:null,itemEdits:{},customItems:[],dnotes:{},snotes:{}},
                   typeof v==="string"?JSON.parse(v):v);
   seedDesign(); return true;
 }
@@ -219,23 +220,69 @@ function renderChrome(){
   const b=document.getElementById('sharenote'); if(b) b.style.display=(mode==="live"||mode==="shared")?"block":"none";
   const nb=document.getElementById('localnote'); if(nb) nb.style.display=(mode==="live"||mode==="shared")?"none":"block";
 }
+/* ---------- items: seed data + your edits + your own additions ---------- */
+function ITEMS(){
+  const base=DATA.items.map(i=>Object.assign({},i,(S.itemEdits&&S.itemEdits[i.id])||{}));
+  const mine=(S.customItems||[]).map(c=>Object.assign({},c,{mine:true}));
+  return base.concat(mine);
+}
+function ITEM(id){ return ITEMS().find(i=>i.id===id); }
+function nextId(){
+  const ids=(S.customItems||[]).map(c=>c.id);
+  return ids.length?Math.max.apply(null,ids)+1:1001;
+}
+function num(v){ return parseFloat(String(v).replace(/[^0-9.\-]/g,""))||0; }
+function pkgNames(){
+  const a=DATA.packages.map(p=>p.name);
+  ITEMS().forEach(i=>{ if(i.pkg&&a.indexOf(i.pkg)<0)a.push(i.pkg); });
+  return a.sort();
+}
+function addItem(){
+  S.customItems=S.customItems||[];
+  const id=nextId();
+  S.customItems.push({id:id,pri:"P4",item:"",ref:"Added by owner",trade:"",
+    pkg:"12 Handyman & appliances",why:"",lo:0,hi:0});
+  F.editing=id; F.q=""; F.pri=""; F.pkg=""; F.st=""; save(); renderPunch();
+}
+function editItem(id){ F.editing=(F.editing===id?null:id); renderPunch(); }
+function saveEdit(id){
+  const g=k=>{const e=document.getElementById("ed-"+k); return e?e.value:"";};
+  const patch={pri:g("pri"),item:g("item"),ref:g("ref"),trade:g("trade"),pkg:g("pkg"),
+               why:g("why"),lo:num(g("lo")),hi:num(g("hi"))};
+  const mine=(S.customItems||[]).find(c=>c.id===id);
+  if(mine){ Object.assign(mine,patch); }
+  else { S.itemEdits=S.itemEdits||{}; S.itemEdits[id]=patch; }
+  F.editing=null; save(); renderPunch(); renderDash(); renderBids();
+}
+function delItem(id){
+  const mine=(S.customItems||[]).find(c=>c.id===id);
+  if(mine){
+    if(!confirm('Delete "'+(mine.item||"this item")+'" permanently?'))return;
+    S.customItems=S.customItems.filter(c=>c.id!==id); delete S.items[id];
+  }else{
+    if(!confirm("Revert this item to the original inspection wording and budget?"))return;
+    if(S.itemEdits)delete S.itemEdits[id];
+  }
+  F.editing=null; save(); renderPunch(); renderDash(); renderBids();
+}
+function edited(id){ return !!(S.itemEdits&&S.itemEdits[id]); }
 function st(id){ return (S.items[id]&&S.items[id].status)||"Not started"; }
 function fld(id,k){ return (S.items[id]&&S.items[id][k])||""; }
 function setItem(id,k,v){ S.items[id]=S.items[id]||{}; S.items[id][k]=v; save(); renderAll(); }
 const money=n=>n?("$"+Math.round(n).toLocaleString()):"–";
 
 /* ---------- rollups ---------- */
-function live(){ return DATA.items.filter(i=>st(i.id)!=="N/A"); }
+function live(){ return ITEMS().filter(i=>st(i.id)!=="N/A"); }
 function rollup(){
   const L=live(), d=L.filter(i=>st(i.id)==="Done");
   const quoted=L.reduce((s,i)=>s+(parseFloat(fld(i.id,'quoted'))||0),0);
   const remHi=L.filter(i=>st(i.id)!=="Done").reduce((s,i)=>s+i.hi,0);
   return {n:L.length,done:d.length,pct:L.length?Math.round(d.length/L.length*100):0,
           lo:L.reduce((s,i)=>s+i.lo,0),hi:L.reduce((s,i)=>s+i.hi,0),quoted,remHi,
-          na:DATA.items.length-L.length};
+          na:ITEMS().length-L.length};
 }
 function pkgStats(name){
-  const all=DATA.items.filter(i=>i.pkg===name), L=all.filter(i=>st(i.id)!=="N/A");
+  const all=ITEMS().filter(i=>i.pkg===name), L=all.filter(i=>st(i.id)!=="N/A");
   return {all,L,done:L.filter(i=>st(i.id)==="Done").length,
           lo:L.reduce((s,i)=>s+i.lo,0),hi:L.reduce((s,i)=>s+i.hi,0),
           remHi:L.filter(i=>st(i.id)!=="Done").reduce((s,i)=>s+i.hi,0),
@@ -245,8 +292,8 @@ function pkgStats(name){
 /* ---------- dashboard ---------- */
 function renderDash(){
   const r=rollup();
-  const p1=DATA.items.filter(i=>i.pri==="P1"&&!["Done","N/A"].includes(st(i.id)));
-  const p2=DATA.items.filter(i=>i.pri==="P2"&&!["Done","N/A"].includes(st(i.id)));
+  const p1=ITEMS().filter(i=>i.pri==="P1"&&!["Done","N/A"].includes(st(i.id)));
+  const p2=ITEMS().filter(i=>i.pri==="P2"&&!["Done","N/A"].includes(st(i.id)));
   document.getElementById('p-dash').innerHTML=`
   <div class="banner"><b>The clock that matters:</b> the 4-point inspection marked the roof UNSATISFACTORY, so your
   carrier will want documented repairs — confirm the exact deadline the day the binder issues. The roof warranty
@@ -286,7 +333,7 @@ function sel(id){
 }
 function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function filtered(){
-  let L=DATA.items.filter(i=>{
+  let L=ITEMS().filter(i=>{
     const s=st(i.id);
     if(F.hideNA&&s==="N/A")return false;
     if(F.hideDone&&s==="Done")return false;
@@ -303,7 +350,7 @@ function filtered(){
   return L;
 }
 function renderPunch(){
-  const L=filtered(), pkgs=[...new Set(DATA.items.map(i=>i.pkg))].sort();
+  const L=filtered(), pkgs=pkgNames();
   const lo=L.reduce((s,i)=>s+(st(i.id)==="N/A"?0:i.lo),0), hi=L.reduce((s,i)=>s+(st(i.id)==="N/A"?0:i.hi),0);
   document.getElementById('p-punch').innerHTML=`
   <div class="filters">
@@ -318,6 +365,7 @@ function renderPunch(){
     <label><input type="checkbox" class="ck" ${F.hideNA?"checked":""} onchange="F.hideNA=this.checked;renderPunch()"> hide N/A</label>
     <label><input type="checkbox" class="ck" ${F.hideDone?"checked":""} onchange="F.hideDone=this.checked;renderPunch()"> hide done</label>
     <label><input type="checkbox" class="ck" ${F.why?"checked":""} onchange="F.why=this.checked;renderPunch()"> show "why"</label>
+    <button onclick="addItem()">+ Add item</button>
     <span style="font-size:12.5px;color:#6b705f">${L.length} shown · ${money(lo)}–${money(hi)}</span>
   </div>
   <table><thead><tr>
@@ -326,10 +374,12 @@ function renderPunch(){
     <th class="nosort" style="width:130px">Vendor</th><th class="nosort" style="width:92px">Quoted $</th>
     <th onclick="sortBy('status')" style="width:132px">Status</th>
     <th class="nosort" style="width:118px">Target</th><th class="nosort" style="width:150px">Notes</th>
+    <th class="nosort" style="width:34px"></th>
   </tr></thead><tbody>
   ${L.map(i=>{const s=st(i.id);
     return `<tr class="${s==="Done"?"done":s==="N/A"?"na":""}">
-      <td>${i.id}</td><td class="pri" style="background:var(--${i.pri.toLowerCase()},#fff)">${i.pri}</td>
+      <td>${i.id}${i.mine?'<div class="ref">yours</div>':edited(i.id)?'<div class="ref">edited</div>':""}</td>
+      <td class="pri" style="background:var(--${i.pri.toLowerCase()},#fff)">${i.pri}</td>
       <td><b>${esc(i.item)}</b><div class="ref">${esc(i.ref)}</div>
         ${F.why?`<div class="why">${esc(i.why)}</div>`:""}</td>
       <td>${esc(i.trade)}<div class="ref">${esc(i.pkg)}</div></td>
@@ -342,9 +392,47 @@ function renderPunch(){
       <td><input class="cell" type="date" value="${esc(fld(i.id,'target'))}"
           onchange="setItem(${i.id},'target',this.value)"></td>
       <td><input class="cell" value="${esc(fld(i.id,'notes'))}" placeholder="notes"
-          onchange="setItem(${i.id},'notes',this.value)"></td></tr>`;}).join("")}
+          onchange="setItem(${i.id},'notes',this.value)"></td>
+      <td><button class="ghost" title="Edit this item" onclick="editItem(${i.id})"
+          style="padding:3px 7px;border-color:var(--line);background:#fff;color:var(--palm)">✎</button></td></tr>`
+      + (F.editing===i.id?editorRow(i):"");}).join("")}
   </tbody></table>`;
 }
+function editorRow(i){
+  const mine=!!i.mine;
+  return `<tr><td colspan="11" style="background:var(--plaster);padding:16px 14px">
+    <div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:10px 14px;max-width:1100px">
+      <label style="font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#6b705f">Priority
+        <select id="ed-pri" class="cell">${["P1","P2","P3","P4","Design","Setup"].map(p=>
+          `<option${i.pri===p?" selected":""}>${p}</option>`).join("")}</select></label>
+      <label style="font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#6b705f">Item
+        <input id="ed-item" class="cell" value="${esc(i.item)}" placeholder="what needs doing"></label>
+      <label style="font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#6b705f">Report reference / source
+        <input id="ed-ref" class="cell" value="${esc(i.ref)}" placeholder="where this came from"></label>
+      <label style="font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#6b705f">Trade
+        <input id="ed-trade" class="cell" value="${esc(i.trade)}" placeholder="e.g. Plumber"></label>
+      <label style="font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#6b705f">Bid package
+        <select id="ed-pkg" class="cell">${pkgNames().map(p=>
+          `<option${i.pkg===p?" selected":""}>${esc(p)}</option>`).join("")}</select></label>
+      <label style="font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#6b705f">Why it matters
+        <input id="ed-why" class="cell" value="${esc(i.why)}" placeholder="context for whoever quotes it"></label>
+      <label style="font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#6b705f">Budget low
+        <input id="ed-lo" class="cell" style="text-align:right" value="${i.lo||""}"></label>
+      <label style="font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#6b705f">Budget high
+        <input id="ed-hi" class="cell" style="text-align:right" value="${i.hi||""}"></label>
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <button onclick="saveEdit(${i.id})">Save</button>
+        <button class="ghost" style="color:var(--ink);border-color:var(--line);background:#fff"
+          onclick="cancelEdit()">Cancel</button>
+        <button class="warn" onclick="delItem(${i.id})">${mine?"Delete":"Revert"}</button>
+      </div>
+    </div>
+    <p style="font-size:12px;color:#6b705f;margin-top:10px">${mine
+      ? "This is your own item — Delete removes it entirely."
+      : "This came from the inspection reports. Revert restores the original wording and budget."}</p>
+  </td></tr>`;
+}
+function cancelEdit(){ F.editing=null; renderPunch(); }
 function sortBy(k){ F.dir=(F.sort===k)?-F.dir:1; F.sort=k; renderPunch(); }
 
 /* ---------- bid packages ---------- */
@@ -425,17 +513,31 @@ function renderSetup(){
   </div>
   <h2 style="margin:26px 0 8px;font-size:22px">Hard deadlines &amp; transfers</h2>
   <table><thead><tr><th class="nosort" style="width:44px">Done</th><th class="nosort">Item</th>
-    <th class="nosort" style="width:220px">When</th><th class="nosort">Why</th>
-    <th class="nosort" style="width:220px">Who</th></tr></thead><tbody>
+    <th class="nosort" style="width:200px">When</th><th class="nosort">Why</th>
+    <th class="nosort" style="width:190px">Who</th>
+    <th class="nosort" style="width:230px">Your notes / answer</th></tr></thead><tbody>
   ${DATA.deadlines.map((d,k)=>`<tr class="${S.deadlines[k]?"done":""}">
     <td><input type="checkbox" class="ck" ${S.deadlines[k]?"checked":""}
-        onchange="S.deadlines[${k}]=this.checked;save();renderAll()"></td>
+        onchange="S.deadlines[${k}]=this.checked;save();renderSetup();renderDash()"></td>
     <td><b>${esc(d.item)}</b>${d.flag?` <span style="color:#B4584A;font-size:11.5px">${esc(d.flag)}</span>`:""}</td>
-    <td>${esc(d.when)}</td><td class="why">${esc(d.why)}</td><td>${esc(d.who)}</td></tr>`).join("")}
+    <td>${esc(d.when)}</td><td class="why">${esc(d.why)}</td><td>${esc(d.who)}</td>
+    <td><input class="cell" value="${esc((S.dnotes&&S.dnotes[k])||"")}"
+        placeholder="date confirmed, who you spoke to, ref #"
+        onchange="S.dnotes=S.dnotes||{};S.dnotes[${k}]=this.value;save()"></td></tr>`).join("")}
   </tbody></table>
   <h2 style="margin:30px 0 8px;font-size:22px">Move-in setup</h2>
-  <div style="background:#fff;border:1px solid var(--line);padding:8px 18px;max-width:900px">
-  ${DATA.setup.map((s,k)=>ck('setup',k,esc(s))).join("")}</div>`;
+  <table><thead><tr><th class="nosort" style="width:44px">Done</th><th class="nosort">Task</th>
+    <th class="nosort" style="width:320px">Your notes / answer</th></tr></thead><tbody>
+  ${DATA.setup.map((s,k)=>`<tr class="${S.setup[k]?"done":""}">
+    <td><input type="checkbox" class="ck" ${S.setup[k]?"checked":""}
+        onchange="S.setup[${k}]=this.checked;save();renderSetup();renderDash()"></td>
+    <td>${esc(s)}</td>
+    <td><input class="cell" value="${esc((S.snotes&&S.snotes[k])||"")}"
+        placeholder="e.g. Tuesdays / Thursdays, acct #, who to call"
+        onchange="S.snotes=S.snotes||{};S.snotes[${k}]=this.value;save()"></td></tr>`).join("")}
+  </tbody></table>
+  <p class="hint">The notes column is the useful half of this tab — trash days, account numbers, the name of whoever
+  you spoke to at FPL, the gate code. Things you'll want six months from now and won't remember.</p>`;
 }
 function seedDesign(){
   if(!Array.isArray(S.designRows)||!S.designRows.length){
@@ -603,31 +705,24 @@ function expCSV(){
   const H=["#","Priority","Item","Report reference","Trade","Bid package","Why it matters",
            "Budget Low","Budget High","Vendor","Quoted $","Status","Target date","Notes"];
   const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
-  const rows=DATA.items.map(i=>[i.id,i.pri,i.item,i.ref,i.trade,i.pkg,i.why,i.lo,i.hi,
+  const rows=ITEMS().map(i=>[i.id,i.pri,i.item,i.ref,i.trade,i.pkg,i.why,i.lo,i.hi,
     fld(i.id,'vendor'),fld(i.id,'quoted'),st(i.id),fld(i.id,'target'),fld(i.id,'notes')].map(q).join(","));
   dl("3125_Embassy_punch_list.csv",[H.map(q).join(","),...rows].join("\n"),"text/csv");
 }
 function expJSON(){ dl("3125_Embassy_backup.json",JSON.stringify(S,null,2),"application/json"); }
 function impJSON(el){
   const f=el.files[0]; if(!f)return; const r=new FileReader();
-  r.onload=()=>{ try{ S=Object.assign({items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null,paintRows:null},JSON.parse(r.result));
+  r.onload=()=>{ try{ S=Object.assign({items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null,paintRows:null,itemEdits:{},customItems:[],dnotes:{},snotes:{}},JSON.parse(r.result));
     seedDesign(); save(); renderAll(); renderChrome(); alert("Restored."); }catch(e){ alert("That file could not be read."); } };
   r.readAsText(f); el.value="";
 }
 function wipe(){ if(confirm("Clear every status, quote, note and design row? Export a backup first if unsure."))
-  { S={items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null,paintRows:null}; seedDesign(); save(); renderAll(); renderChrome(); } }
+  { S={items:{},deadlines:{},setup:{},design:{},sched:{},designRows:null,paintRows:null,itemEdits:{},customItems:[],dnotes:{},snotes:{}}; seedDesign(); save(); renderAll(); renderChrome(); } }
 
 /* ---------- boot ---------- */
 function renderAll(){ renderDash();renderPunch();renderBids();renderSched();renderSetup();renderDesign();renderRef(); }
 function go(id){ TABS.forEach(([k])=>{
     document.getElementById('p-'+k).classList.toggle('on',k===id);
-    document.querySelector('[data-t="'+k+'"]').classList.toggle('on',k===id); }); }
-document.getElementById('nav').innerHTML=TABS.map(([k,l])=>
-  `<a data-t="${k}" class="${k==='dash'?'on':''}" onclick="go('${k}')">${l}</a>`).join("");
-load().then(()=>{ seedDesign(); renderAll(); renderRef(); renderChrome(); });
-</script>
-</body>
-</html>
     document.querySelector('[data-t="'+k+'"]').classList.toggle('on',k===id); }); }
 document.getElementById('nav').innerHTML=TABS.map(([k,l])=>
   `<a data-t="${k}" class="${k==='dash'?'on':''}" onclick="go('${k}')">${l}</a>`).join("");
